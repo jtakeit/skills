@@ -1,0 +1,21 @@
+node_modules/
+.DS_Store
+scripts/.deps/
+.pitch-tmp/
+*.mp4
+
+# The pitch audio is the user's own and never part of this repository: no
+# music ships (no licence to give), and the voice is a particular person's
+# recording. Drop them into assets/pitch/music/ and assets/pitch/voice/ —
+# see assets/pitch/README.md. The directories stay, with whatever marks them.
+assets/pitch/music/*
+assets/pitch/voice/*
+!assets/pitch/music/.gitkeep
+!assets/pitch/voice/.gitkeep
+!assets/pitch/music/README.md
+!assets/pitch/voice/README.md
+
+# A client project's working files (.jtakeit/ scrapes and photographs,
+# PORTRAIT.md, the pitch) live in that project's own repository, never here.
+# Running the scripts from inside this checkout by mistake should not add them.
+.jtakeit/

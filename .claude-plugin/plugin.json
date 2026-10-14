@@ -1,0 +1,22 @@
+{
+  "name": "jtakeit-sites",
+  "description": "For freelance web developers: find local businesses, build a site from a business's own Instagram, send a short video of it, and run the site on jtakeit — one skill per stage, with the stage tracked in the repository.",
+  "version": "0.1.0",
+  "author": {
+    "name": "jtakeit",
+    "url": "https://jtakeit.com"
+  },
+  "homepage": "https://jtakeit.com",
+  "repository": "https://github.com/jtakeit/skills",
+  "keywords": [
+    "jtakeit",
+    "astro",
+    "freelance",
+    "local-business",
+    "instagram",
+    "outreach",
+    "websites",
+    "pipeline"
+  ],
+  "license": "MIT"
+}

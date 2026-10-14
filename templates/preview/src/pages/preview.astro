@@ -1,0 +1,82 @@
+---
+/**
+ * The studio's review page — the link the client is sent.
+ *
+ *   /preview/?v=<variant>&vp=<desktop|tablet|mobile>&accent=<hex>
+ *
+ * Not part of the client's site. It, `src/components/_preview/` and
+ * `src/data/variants.ts` are the whole harness, and all three are deleted the
+ * moment a direction is chosen. Nothing the client keeps imports any of them.
+ *
+ * On the platform's preview the build is served under /p/<slug>/, so every
+ * address here goes through under().
+ *
+ * Deliberately not linked from any variant: the client gets this URL from us,
+ * and the variants link only to themselves.
+ */
+import PreviewShell from '../components/_preview/PreviewShell.astro';
+import { VARIANTS } from '../data/variants';
+import { BUSINESS } from '../data/site';
+import { under } from '../lib/under';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* Always. This page is a tool, and never the front page — the platform
+        refuses a front page that says noindex (JTK_E_NOINDEX). */}
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{BUSINESS.name}</title>
+
+    <script is:inline define:vars={{ ids: VARIANTS.map((v) => v.id), root: under('/v/') }}>
+      /*
+       * Device gate, before first paint.
+       *
+       * Touch-only AND a short screen side of at most 1024px is a real phone or
+       * tablet: send the visitor straight to the variant, with no bar at all.
+       * Offering a "desktop" preview on a six-inch screen is worse than useless,
+       * and a forwarded ?vp=desktop must not be able to show a client a desktop
+       * layout on their phone.
+       *
+       * Touch alone is not enough — a touchscreen laptop, a pen display and
+       * DevTools emulation all report coarse pointer and no hover, and would be
+       * locked into a frame with no way out.
+       */
+      (function () {
+        try {
+          var touchOnly =
+            window.matchMedia && matchMedia('(hover: none) and (pointer: coarse)').matches;
+          var minDim = Math.min(screen.width, screen.height);
+          if (!touchOnly || minDim > 1024) return;
+
+          var params = new URLSearchParams(location.search);
+          var v = params.get('v');
+          var id = ids.indexOf(v) === -1 ? ids[0] : v;
+          if (!id) return;
+
+          // No accent here: the variant pages carry no preview code at all, so
+          // the picked colour exists only inside the frame the shell controls.
+          // It is a desktop review tool; on a phone the client sees the design
+          // as built.
+          location.replace(root + id + '/');
+        } catch (e) {
+          /* a malformed query must never take the preview down */
+        }
+      })();
+    </script>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #131313;
+      }
+    </style>
+  </head>
+
+  <body>
+    <PreviewShell />
+  </body>
+</html>

@@ -1,0 +1,416 @@
+---
+/**
+ * The studio's review bar and the frame it holds.
+ *
+ * This is our tool, not part of the client's design — hence the deliberately
+ * neutral treatment: black, small type, none of the landing's typography. The
+ * client must never wonder whether it belongs to their site.
+ *
+ * The variant pages know nothing about it. A variant is framed in an <iframe>
+ * sized to 390 / 834 / full, so its own @media queries fire exactly as they
+ * would on the device — one activation point per breakpoint, not two. (The
+ * alternative, mirroring every breakpoint into an `html[data-vp]` selector,
+ * works but means every layout change has to be made in two places for the rest
+ * of the project's life.)
+ *
+ * Because the frame is same-origin, the accent picker reaches into it directly.
+ * That is why the picker leaves no trace in the client's code: nothing in the
+ * variant listens for anything.
+ */
+import { BAR_COPY, DEFAULT_ACCENT, VARIANTS } from '../../data/variants';
+import { BUSINESS } from '../../data/site';
+import { under } from '../../lib/under';
+
+const viewports = [
+  { id: 'desktop', label: BAR_COPY.desktop },
+  { id: 'tablet', label: BAR_COPY.tablet },
+  { id: 'mobile', label: BAR_COPY.mobile },
+] as const;
+
+---
+
+<header class="bar">
+  <div class="bar__brand">
+    <span class="bar__mark">{BUSINESS.name}</span>
+    <span class="bar__tag">{BAR_COPY.tag}</span>
+  </div>
+
+  <nav class="bar__variants" aria-label={BAR_COPY.tag}>
+    {
+      VARIANTS.map((v) => (
+        <a class="tab" href={`?v=${v.id}`} data-variant-link={v.id} title={v.note}>
+          {v.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="bar__tools">
+    <label class="accent">
+      <span class="accent__label">{BAR_COPY.colour}</span>
+      <input type="color" value={DEFAULT_ACCENT} data-accent-input aria-label={BAR_COPY.colour} />
+      <button type="button" class="accent__reset" data-accent-reset title="↺">↺</button>
+    </label>
+
+    <div class="vp" role="group">
+      {
+        viewports.map((vp) => (
+          <a class="vp__btn" href={`?vp=${vp.id}`} data-vp-link={vp.id}>
+            {vp.label}
+          </a>
+        ))
+      }
+    </div>
+
+    <span class="bar__note" data-note></span>
+  </div>
+</header>
+
+<div class="stage">
+  <iframe class="stage__frame" data-frame title={BUSINESS.name}></iframe>
+</div>
+
+<noscript>
+  <ul class="fallback">
+    {VARIANTS.map((v) => <li><a href={under(`/v/${v.id}/`)}>{v.label} — {v.note}</a></li>)}
+  </ul>
+</noscript>
+
+<style>
+  :global(:root) {
+    --bar-h: 52px;
+  }
+
+  .bar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 60;
+    height: var(--bar-h);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 16px;
+    background: rgba(10, 10, 10, 0.94);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    /* Outside the landing's palette on purpose. */
+    color: #fff;
+    font-family: system-ui, sans-serif;
+  }
+
+  .bar__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .bar__mark {
+    font: 700 13px/1 system-ui;
+    white-space: nowrap;
+  }
+
+  .bar__tag {
+    font: 600 9px/1 system-ui;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.34);
+    padding: 4px 7px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .bar__variants {
+    display: flex;
+    gap: 6px;
+  }
+
+  .tab {
+    color: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    padding: 9px 18px;
+    font: 700 11px/1 system-ui;
+    letter-spacing: 0.14em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      color 0.15s,
+      border-color 0.15s;
+  }
+
+  .tab:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .tab[data-active] {
+    background: #f5f5f5;
+    color: #0a0a0a;
+    border-color: #f5f5f5;
+  }
+
+  .bar__tools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .accent {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 6px 3px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+  }
+
+  .accent__label {
+    font: 700 9px/1 system-ui;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .accent input[type='color'] {
+    width: 26px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .accent__reset {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.35);
+    line-height: 1;
+    padding: 2px 3px;
+    cursor: pointer;
+  }
+
+  .accent__reset:hover {
+    color: #fff;
+  }
+
+  .vp {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+  }
+
+  .vp__btn {
+    color: rgba(255, 255, 255, 0.45);
+    border-radius: 3px;
+    padding: 7px 10px;
+    font: 700 9px/1 system-ui;
+    letter-spacing: 0.14em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .vp__btn:hover {
+    color: #fff;
+  }
+
+  .vp__btn[data-active] {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+
+  .bar__note {
+    font: 500 11px/1 system-ui;
+    color: rgba(255, 255, 255, 0.32);
+    white-space: nowrap;
+  }
+
+  /* Narrow bars shed the optional pieces first. The viewport group survives:
+     on a tablet it is the client's only way to the phone layout. */
+  @media (max-width: 1100px) {
+    .bar__note {
+      display: none;
+    }
+  }
+
+  @media (max-width: 940px) {
+    .accent {
+      display: none;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .bar {
+      gap: 8px;
+      padding: 0 10px;
+    }
+
+    .bar__tag {
+      display: none;
+    }
+
+    .tab {
+      padding: 8px 10px;
+      letter-spacing: 0.08em;
+    }
+  }
+
+  .stage {
+    padding-top: var(--bar-h);
+    min-height: 100svh;
+    background: #131313;
+  }
+
+  /* A thin outline and a centred column — not a drawn device. A phone bezel
+     makes the client evaluate the bezel. */
+  .stage__frame {
+    display: block;
+    width: 100%;
+    height: calc(100svh - var(--bar-h));
+    margin-inline: auto;
+    border: 0;
+    background: #fff;
+    transition: width 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .stage[data-vp='tablet'] .stage__frame {
+    width: 834px;
+    max-width: 100%;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+
+  .stage[data-vp='mobile'] .stage__frame {
+    width: 390px;
+    max-width: 100%;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  }
+
+  .fallback {
+    padding: calc(var(--bar-h) + 24px) 24px 24px;
+    color: #fff;
+  }
+</style>
+
+<script>
+  // The bar's whole behaviour. Everything it changes lives in the query string,
+  // so a link forwarded to the client opens exactly as it was seen.
+  import { BAR_COPY, DEFAULT_ACCENT, VARIANTS } from '../../data/variants';
+  // The platform's preview serves this build under /p/<slug>/, so a frame
+  // pointed at /v/<id>/ from the root would frame a 404 there.
+  import { under } from '../../lib/under';
+
+  const ids = VARIANTS.map((v) => v.id);
+  const VPS = ['desktop', 'tablet', 'mobile'] as const;
+  type Vp = (typeof VPS)[number];
+
+  const stage = document.querySelector<HTMLElement>('.stage')!;
+  const frame = document.querySelector<HTMLIFrameElement>('[data-frame]')!;
+  const note = document.querySelector<HTMLElement>('[data-note]')!;
+  const accentInput = document.querySelector<HTMLInputElement>('[data-accent-input]');
+
+  const params = () => new URLSearchParams(location.search);
+
+  const currentVariant = () => {
+    const v = params().get('v');
+    return v && ids.includes(v) ? v : (ids[0] ?? '');
+  };
+
+  const currentVp = (): Vp => {
+    const vp = params().get('vp');
+    return (VPS as readonly string[]).includes(vp ?? '') ? (vp as Vp) : 'desktop';
+  };
+
+  const currentAccent = () => {
+    const a = params().get('accent');
+    return a && /^#[0-9a-f]{6}$/i.test(a) ? a : null;
+  };
+
+  /**
+   * Same-origin, so the accent goes straight onto the framed document. Re-run
+   * on every load: switching variants gives a fresh document, and a fresh
+   * document has the variant's own default back.
+   */
+  function paintAccent() {
+    const value = currentAccent();
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    doc.documentElement.style.setProperty('--accent', value ?? DEFAULT_ACCENT);
+  }
+
+  function writeQuery(next: URLSearchParams) {
+    const qs = next.toString();
+    history.replaceState(null, '', qs ? `${location.pathname}?${qs}` : location.pathname);
+    sync();
+  }
+
+  function sync() {
+    const variant = currentVariant();
+    const vp = currentVp();
+
+    // Tabs and viewport buttons stay ordinary links, each carrying the rest of
+    // the current query, so any single state is a URL that can be sent as-is.
+    document.querySelectorAll<HTMLAnchorElement>('[data-variant-link]').forEach((a) => {
+      const next = params();
+      next.set('v', a.dataset.variantLink!);
+      a.href = `${location.pathname}?${next.toString()}`;
+      a.toggleAttribute('data-active', a.dataset.variantLink === variant);
+    });
+
+    document.querySelectorAll<HTMLAnchorElement>('[data-vp-link]').forEach((a) => {
+      const next = params();
+      next.set('vp', a.dataset.vpLink!);
+      a.href = `${location.pathname}?${next.toString()}`;
+      a.toggleAttribute('data-active', a.dataset.vpLink === vp);
+    });
+
+    stage.dataset.vp = vp;
+    note.textContent = VARIANTS.find((v) => v.id === variant)?.note ?? '';
+
+    const src = under(`/v/${variant}/`);
+    if (!frame.src || new URL(frame.src, location.href).pathname !== src) frame.src = src;
+
+    document.title = `${BAR_COPY.tag} · ${VARIANTS.find((v) => v.id === variant)?.label ?? ''}`;
+  }
+
+  // Switching variant or viewport is a state change, not a navigation: the
+  // links work without script, and with it nothing reloads.
+  document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey) return;
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>(
+      '[data-variant-link], [data-vp-link]',
+    );
+    if (!link) return;
+    event.preventDefault();
+    const next = params();
+    if (link.dataset.variantLink) next.set('v', link.dataset.variantLink);
+    if (link.dataset.vpLink) next.set('vp', link.dataset.vpLink);
+    writeQuery(next);
+  });
+
+  accentInput?.addEventListener('input', () => {
+    const next = params();
+    next.set('accent', accentInput.value.toLowerCase());
+    writeQuery(next);
+    paintAccent();
+  });
+
+  document.querySelector('[data-accent-reset]')?.addEventListener('click', () => {
+    const next = params();
+    next.delete('accent');
+    if (accentInput) accentInput.value = DEFAULT_ACCENT;
+    writeQuery(next);
+    paintAccent();
+  });
+
+  frame.addEventListener('load', paintAccent);
+
+  const fromUrl = currentAccent();
+  if (accentInput && fromUrl) accentInput.value = fromUrl;
+
+  sync();
+</script>

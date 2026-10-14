@@ -1,0 +1,17 @@
+{
+  "$schema": "https://code.claude.com/schemas/marketplace.json",
+  "name": "jtakeit",
+  "description": "Claude Code plugins for building and running client sites on jtakeit",
+  "owner": {
+    "name": "jtakeit",
+    "url": "https://jtakeit.com"
+  },
+  "plugins": [
+    {
+      "name": "jtakeit-sites",
+      "source": "./",
+      "description": "Find local businesses, build a site from their own Instagram, send a short video, run it on jtakeit",
+      "category": "workflow"
+    }
+  ]
+}
