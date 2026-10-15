@@ -57,6 +57,21 @@ facts in `src/data/site.ts`; photos through `astro:assets`; works with
 JavaScript off; `npm run check` at zero. This is a real site, built the way a
 jtakeit site is built. It has to be, because it is the one they will get.
 
+## The frame: a header and a footer
+
+A page without them is a poster, not a site — and the first thing a prospect
+looks for is their own name at the top. Both are required, both live in
+`jtk/shared.json` (`docs/pages.md` → *Text that is on every page*), and both
+are annotated like everything else:
+
+- **the header**: their name as the wordmark (their sign, where the portrait
+  has one), the page's sections as anchors, and the one action as a button —
+  sticky, quiet, and on a phone a single row;
+- **the footer**: the name again, what they published themselves (address,
+  hours, phone — only from «Published by them»), their Instagram, and the
+  privacy page, which the scaffold builds and nothing links to until the
+  footer does.
+
 ## Take the voice, write the text
 
 The profile decides how the page *sounds*. It is not a source of finished
@@ -119,6 +134,38 @@ claim nobody confirmed. The first belongs on the page, the second never does.
 paragraph out of, and what a hesitating visitor reads last. On a spec build every
 answer comes from their own captions and the `FAQPage` markup waits until a human
 confirms them — see `jtakeit-sites:seo-geo` for what the block has to do.
+
+## The work, in volume
+
+The feed is the material, and `jt-photos` measured every frame of it. A page
+that shows four pictures of a business with a hundred has thrown the argument
+away. **Show the work at the volume they have**: twelve to forty pieces where
+`photos.json` has them, in one gallery whose arrangement is chosen from the
+material — `docs/gallery.md` has twelve, six of them things a visitor plays
+with (`deck`, `coverflow`, `focus`, `stage`, `morph`, `sphere`). Run
+`/jt-showroom` and choose with the developer: it shows every one of them on
+this business's own photographs.
+
+The pictures are the business's own published work. Prefer the frames where
+the work is the subject — the cut from the side and the back, the nails, the
+plate — and keep a customer's full face out of the hero; inside a gallery of
+work they published, it is theirs to show.
+
+## Moments, not only a hero
+
+The hero is the first «wow», not the only one. Below it, **at least two
+moments a visitor does something with**, each a different mechanism: a gallery
+from the six above, a picture that answers the pointer, a section driven by
+the scroll (`animation-timeline: view()`), a before-and-after under a drag.
+They do not move on their own — nothing does but the hero and at most one
+bounded thing — so they cost nothing against the motion ceiling, and they are
+what makes a page feel made rather than assembled.
+
+And the layout under them is not a stack of boxes. Vary the shapes — a
+full-bleed photograph band, type set large across the width, an element
+overlapping the edge of the next section, rounded where the material is soft.
+One edge treatment on every block is a template; crop marks around everything
+is the look the prospect's last agency already sold them.
 
 ## The hero
 
@@ -222,7 +269,11 @@ So:
   whether the spec shows booking on the business's own site: if yes, lay out
   the kit with exactly those services, those hours and their team's first
   names, paid **on the spot** (a preview charges nobody, and how they take
-  money is the brief's question). It is the strongest thing the pitch can show
+  money is the brief's question). Set `zone` in `jtk/bookings.json` from their
+  address (`Europe/Zurich` for Zürich) and `hours` from what they published:
+  the scaffold leaves both for the brief, this track has no brief, and without
+  them the form says «nobody has said which timezone this business keeps».
+  `validate_catalogue` advises `JTK_W_DIARY_UNSET` when either is missing. It is the strongest thing the pitch can show
   a business that pays a platform today — their own booking, on their own
   page.
 
@@ -366,6 +417,15 @@ glance, not for having fewer of them — the video shows the top of the page and
 the pitch is the whole page, and those are different jobs.
 
 ## Exit checklist
+
+- [ ] a header (their name, the sections, the one action) and a footer (the
+      name, what they published, Instagram, the privacy page), in `jtk/shared.json`
+- [ ] the work at the volume they have — one gallery of 12–40 pieces where the
+      feed has them, its arrangement chosen with the developer (`/jt-showroom`)
+- [ ] at least two moments below the hero a visitor does something with, each a
+      different mechanism; no stack of identical boxes
+- [ ] where booking is shown: `zone` and `hours` set, and `preflight` with
+      `try_booking` passed — a failed check is a failure, not a tool error
 
 - [ ] `create_site`, the dev server and `open_dev_session` before the first line,
       and the localhost address given to the developer

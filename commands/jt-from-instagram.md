@@ -92,6 +92,10 @@ Then `attach_repo`, `commit_and_build`, `get_build` until it settles
 (`get_build_log` if not), and `get_built_page` with `shot: "phone"` — look at
 it before anybody else does.
 
+Where the page shows booking: `preflight` with `try_booking` must pass before
+the link goes anywhere — it books and cancels through the page's own form. A
+check that fails is the finding; fix it, rebuild, and run it again.
+
 ## 5. The link
 
 `get_preview_link`, and print it with one line on what it is: a private

@@ -104,6 +104,7 @@ the panel's link, which moves the site and its repository to them.
 | `/jt-spec` | outbound — the speculative site, as a private preview |
 | `/jt-pitch` | outbound — record the pitch video of the preview |
 | `/jt-clips` | cut the business's own video into short loops for the page |
+| `/jt-showroom` | every hero field, ground, edge, entrance and gallery, live on localhost, in this project's colours |
 | `/jt-brief [url or @handle]` | the brief |
 | `/jt-variants` | N clickable design directions |
 | `/jt-preview` | build on jtakeit and send the client a preview link |
