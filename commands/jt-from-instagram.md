@@ -26,7 +26,8 @@ and how: `/mcp`, choose `apify` or `jtakeit`, sign in in the browser that opens
 — an Apify account is the developer's own and every run is billed to it; a
 jtakeit account is free until a site goes live. The tools appear in the same
 session; then run the command again. Do not scrape with jtakeit missing: the
-material would have nowhere to go.
+material would have nowhere to go. If more than a sign-in is missing, or this is
+the first run on this machine, send them to `/jt-setup` instead.
 
 ## 1. Look before building
 
@@ -65,9 +66,9 @@ and run `jt-check --dist ./dist --spec` until it has no failures.
 ## 4. On jtakeit, privately
 
 `create_site` (record the id: `jt-state set site.id <id>`), then the
-repository: `gh repo create <owner>/<slug> --private --source . --push`. If the
-developer has not said in this conversation which GitHub account or
-organisation speculative sites go to, ask once. The jtakeit GitHub App has to
+repository: `gh repo create <owner>/<slug> --private --source . --push`. The
+owner is the one `/jt-setup` saved — `node "${CLAUDE_PLUGIN_ROOT}/scripts/jt-setup.mjs" owner`;
+if none is saved, ask once and save it with `jt-setup owner <name>`. The jtakeit GitHub App has to
 be installed on that owner; for this track, install it once on the whole
 account (all repositories) so no demo waits on a person — if `attach_repo`
 refuses with the App's link, that is the step, and it is theirs.

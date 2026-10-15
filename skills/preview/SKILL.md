@@ -28,6 +28,9 @@ gh repo create <owner>/<slug> --private --source . --push
 node "$JT/scripts/jt-state.mjs" set site.repo <owner>/<slug>
 ```
 
+`<owner>` is the account the brief named for this client; when it named none,
+the developer's own, saved by `/jt-setup` (`node "$JT/scripts/jt-setup.mjs" owner`).
+
 Private: the repository holds the brief and the business's facts before anybody
 has agreed to publish them.
 

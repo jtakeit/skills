@@ -17,6 +17,15 @@ launches it in the panel.
 ```
 /plugin marketplace add jtakeit/skills
 /plugin install jtakeit-sites@jtakeit
+/jt-setup
+```
+
+`/jt-setup` goes through everything below once: what the machine is missing,
+the two sign-ins, the GitHub account the sites go to, and the GitHub App on it.
+It fixes what it can and says which steps are yours. Then:
+
+```
+/jt-from-instagram <handle>
 ```
 
 The skills then load themselves when the work matches, in any project. The
@@ -45,7 +54,8 @@ variant and is expected alongside it.
   `assets/pitch/` — see [assets/pitch/README.md](assets/pitch/README.md). None
   ships with the plugin.
 
-`/jt-doctor` checks all of it, and says what the current stage still needs.
+`/jt-setup` walks through all of it; `/jt-doctor` checks it again later, and
+says what the current stage still needs.
 
 On Windows, work inside WSL2: the scripts are portable Node, but the commands in
 the skills are written for a POSIX shell.
@@ -82,6 +92,7 @@ the panel's link, which moves the site and its repository to them.
 
 | Command | |
 | --- | --- |
+| `/jt-setup [github-owner]` | first run: the machine, the sign-ins, the GitHub account and App |
 | `/jt-status` | which stage this project is in, and what is blocking it |
 | `/jt-doctor [stage]` | what this machine is missing, and which skills are running |
 | `/jt-start <slug>` | start a client project: `@jtakeit/astro` scaffold and pipeline state |
@@ -103,6 +114,7 @@ the panel's link, which moves the site and its repository to them.
 skills/       one per stage, plus pipeline (load first), sourcing, clips, seo-geo
 commands/     the slash commands above
 scripts/
+  jt-setup    the GitHub account the sites go to, the App on it, the browser
   jt-doctor   what this machine is missing, and which skills are running
   jt-init     @jtakeit/astro create, then the pipeline state
   jt-state    read and advance the stage; rewrites STATUS.md

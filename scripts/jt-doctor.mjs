@@ -267,7 +267,7 @@ const blocking = rows.filter((r) => r.level === 'missing');
 console.log('');
 if (blocking.length) {
   console.log(
-    `${blocking.length} thing(s) missing for ${stage ? `stage ${stage}` : 'the pipeline'}. Fix these before comparing results with anybody.`,
+    `${blocking.length} thing(s) missing for ${stage ? `stage ${stage}` : 'the pipeline'}. Fix these before comparing results with anybody — /jt-setup walks through them.`,
   );
 } else {
   console.log(`Ready${stage ? ` for stage ${stage}` : ''}.`);

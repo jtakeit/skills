@@ -246,7 +246,9 @@ outbound track, where every prospect is a new repository, tell the developer to
 install it **on their whole account or organisation, all repositories**, once —
 then each new demo repository needs no manual step. Installed on selected
 repositories only, every new one has to be added by hand, and `attach_repo`
-refuses with the link until it is. You cannot install it; ask.
+refuses with the link until it is. You cannot install it; ask. `/jt-setup`
+saved which account the repositories go to — `jt-setup owner` prints it — and
+`jt-setup app` says what GitHub can tell about the App there.
 
 Then, through the jtakeit MCP server:
 
