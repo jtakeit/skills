@@ -17,6 +17,17 @@ paid from the developer's Apify account — about 20 cents for a typical profile
 capped near 55 cents for a long feed — and the site on jtakeit costs nothing
 while it is a preview; a site is paid for only once a person launches it.
 
+## 0. Both servers, before anything is paid for
+
+Look for the Apify profile-scraper tool and the jtakeit tools (`create_site`)
+among the tools you have. A server that has not been signed in yet has none. If
+either is missing, stop before the scrape and say, in one message, which one
+and how: `/mcp`, choose `apify` or `jtakeit`, sign in in the browser that opens
+— an Apify account is the developer's own and every run is billed to it; a
+jtakeit account is free until a site goes live. The tools appear in the same
+session; then run the command again. Do not scrape with jtakeit missing: the
+material would have nowhere to go.
+
 ## 1. Look before building
 
 Scrape the profile header first (Actor 1 in `jtakeit-sites:prospect`). Stop

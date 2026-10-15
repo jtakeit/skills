@@ -20,12 +20,12 @@ solo practitioners at the end of it.
 ## What you need
 
 **Your own Apify account.** Every Actor here runs on it and is billed to it;
-the plugin carries no account and no credit. Create a token at
-[console.apify.com/settings/integrations](https://console.apify.com/settings/integrations)
-and put it in the environment as `APIFY_TOKEN` (`~/.zshenv` or your shell's
-equivalent, so non-interactive shells get it too). The plugin's `.mcp.json`
-sends it to Apify's MCP server as a bearer token, and `jt-source --dataset`
-reads the same variable. Never the token itself in a file that gets committed.
+the plugin carries no account and no credit. The plugin's `.mcp.json` names
+Apify's MCP server, which signs in through the browser the first time — `/mcp`,
+`apify`, sign in. `jt-source --dataset` reads the run's dataset by its id; on an
+account whose storages are restricted it says so, and the dataset is saved
+through the MCP server into `raw.json` and passed with `--in` instead (or an
+`APIFY_TOKEN` is set). Never a token in a file that gets committed.
 
 ## What it produces
 
@@ -188,7 +188,7 @@ that gets picked up starts the real work:
 
 ## Exit checklist
 
-- [ ] `APIFY_TOKEN` set from the developer's own Apify account
+- [ ] the Apify server signed in to the developer's own Apify account
 - [ ] `sweep.json` holds the terms, in every language the market writes in
 - [ ] the Actor run is capped, and its cost is known
 - [ ] `jt-source` ran clean and the funnel numbers look sane for the market

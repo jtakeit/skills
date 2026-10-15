@@ -10,8 +10,10 @@
  *   jt-source --sweep sweep.json --dataset 5q6Zz2kMSuFGmn77p
  *   jt-source --sweep sweep.json --in raw.json
  *
- * --dataset pulls the Actor's dataset over the Apify API and needs APIFY_TOKEN
- * in the environment. --in reads a file that was already downloaded. Either
+ * --dataset pulls the Actor's dataset over the Apify API: a run's dataset is
+ * read by its id, and APIFY_TOKEN, when it is in the environment, is sent for
+ * an account whose storages are restricted. --in reads a file that was already
+ * saved — the Apify MCP server's dataset output, written to raw.json. Either
  * way the raw dump is written next to the outputs, because re-reading it is
  * free and re-running the Actor is not.
  *
@@ -79,14 +81,12 @@ const since =
 let raw;
 if (datasetId) {
   const token = process.env.APIFY_TOKEN;
-  if (!token) {
-    console.error('jt-source: --dataset needs APIFY_TOKEN in the environment');
-    process.exit(1);
-  }
   const url = `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true`;
-  const response = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  const response = await fetch(url, token ? { headers: { authorization: `Bearer ${token}` } } : {});
   if (!response.ok) {
     console.error(`jt-source: dataset ${datasetId} → HTTP ${response.status}`);
+    if ((response.status === 401 || response.status === 403) && !token)
+      console.error('  this account\'s storages are restricted: save the dataset through the Apify MCP server into raw.json and pass --in raw.json,\n  or put an Apify token (console.apify.com/settings/integrations) in APIFY_TOKEN');
     process.exit(1);
   }
   raw = await response.json();

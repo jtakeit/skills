@@ -35,12 +35,10 @@ says it out loud.
 ## The scrape
 
 **You need your own Apify account.** The Actors below run on it and are billed
-to it. Create a token at
-[console.apify.com/settings/integrations](https://console.apify.com/settings/integrations)
-and export it as `APIFY_TOKEN` before Claude Code starts; the plugin's
-`.mcp.json` passes it to Apify's MCP server. If the Apify tools are missing, it
-is the token — not set, or set after the session started, which leaves the
-server toolless until the session restarts.
+to it. The plugin's `.mcp.json` names Apify's MCP server, which signs in
+through the browser the first time, as jtakeit's does. If the Apify tools are
+missing, the server has not been signed in: ask the developer to open `/mcp`,
+choose `apify` and sign in — the tools appear in the same session.
 
 The server exposes Apify's generic Actor tools alongside ours, so it *can* reach
 the whole Store. This pipeline calls two Actors, in this order. Read

@@ -26,8 +26,7 @@ All of them are reached through Apify's MCP server, which this plugin names in
   "mcpServers": {
     "apify": {
       "type": "http",
-      "url": "https://mcp.apify.com/?tools=actors,docs,khadinakbar/instagram-profile-scraper,apify/instagram-post-scraper,apify/instagram-search-scraper,goat255/instagram-stories-highlights-scraper",
-      "headers": { "Authorization": "Bearer ${APIFY_TOKEN}" }
+      "url": "https://mcp.apify.com/?tools=actors,docs,khadinakbar/instagram-profile-scraper,apify/instagram-post-scraper,apify/instagram-search-scraper,goat255/instagram-stories-highlights-scraper"
     }
   }
 }
@@ -48,17 +47,22 @@ written down somewhere.
 ## Setup, once
 
 **You need your own Apify account**, and every run is billed to it — the plugin
-carries the server's address and nothing else. Create a token at
+carries the server's address and nothing else. There is no token to set: the
+server signs in with OAuth, the way the jtakeit server does. The first time an
+Apify tool is needed, `/mcp` lists `apify` as needing authentication; choose
+it, sign in to Apify in the browser that opens, approve access, and the tools
+appear in the same session.
+
+Check with `/mcp`: `apify` should be listed and Connected. If it is listed but
+not connected, it has not been signed in yet, or the sign-in expired — sign in
+again from there.
+
+A token is still accepted, for a machine with no browser: add
+`"headers": { "Authorization": "Bearer ${APIFY_TOKEN}" }` to the server in your
+own MCP configuration, with the token from
 [console.apify.com/settings/integrations](https://console.apify.com/settings/integrations)
-and put it in the environment as `APIFY_TOKEN` (`~/.zshenv`, or your shell's
-equivalent, so non-interactive shells get it too). The config above reads it.
-
-Check with `/mcp`: `apify` should be listed and Connected. If the tools are
-missing, the token is missing — and a server that had no token when the
-session started stays toolless for that whole session. Set it, then restart.
-
-Never the token itself in a file that gets committed, and never pasted into a
-chat. The placeholder is safe to commit; the value is not.
+in the environment before Claude Code starts. Never the token itself in a file
+that gets committed, and never pasted into a chat.
 
 ## Actor 1 — the profile
 

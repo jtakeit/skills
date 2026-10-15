@@ -105,8 +105,8 @@ node "$JT/scripts/jt-doctor.mjs"
 
 It reports how the plugin is installed and at what commit, and checks node,
 git, `gh` and its login, ffmpeg, the playwright **package and its browser** —
-two separate installs, only the first automatic — `APIFY_TOKEN`, whether a
-`jtakeit` MCP server is configured, the `frontend-design` plugin whose absence
+two separate installs, only the first automatic — whether the `jtakeit` and
+`apify` MCP servers are configured, the `frontend-design` plugin whose absence
 the variants stage does not otherwise notice, and the pitch audio, which is
 the developer's own and missing from every fresh install. What the current
 stage needs fails; what a later stage needs is printed and does not.

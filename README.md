@@ -34,8 +34,10 @@ variant and is expected alongside it.
   used. Install the jtakeit GitHub App
   ([jtakeit-connect](https://github.com/apps/jtakeit-connect)) on the account the
   repositories go to; for the outbound track, on all its repositories, once.
-- **An Apify account**, for the Instagram part, with `APIFY_TOKEN` in your
-  environment. A typical profile costs about 20 cents to read.
+- **An Apify account**, for the Instagram part. The plugin configures Apify's
+  MCP server too, and it signs in the same way, through your browser the first
+  time; every run is billed to your account. A typical profile costs about 20
+  cents to read.
 - **ffmpeg** and **Playwright** for the videos and the page checks. Playwright
   installs itself on first use; its browser is a separate download the scripts
   fetch when it is missing.

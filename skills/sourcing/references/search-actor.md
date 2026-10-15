@@ -11,7 +11,7 @@ only one that answers "who is out there" rather than "who is this".
 | Health | ~2 500 users/month, 88% of runs succeed |
 
 It is named in the plugin's `.mcp.json`, beside the prospect Actors, and runs
-on your own Apify account through `APIFY_TOKEN` — see
+on your own Apify account, signed in through the browser — see
 [apify.md](../../prospect/references/apify.md) for the setup:
 
 ```

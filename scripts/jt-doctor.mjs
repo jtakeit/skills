@@ -12,10 +12,10 @@
  *
  *   · a plugin installed from a marketplace is pinned to a commit and stays
  *     pinned until it is updated — `git pull` in the repository changes nothing
- *   · ffmpeg, playwright's browser, gh, APIFY_TOKEN: absent, and discovered
+ *   · ffmpeg, playwright's browser, gh: absent, and discovered
  *     halfway through a stage
  *   · frontend-design not installed, so the variants are designed without it
- *   · the jtakeit MCP server not configured, or not signed in
+ *   · the jtakeit or Apify MCP server not configured, or not signed in
  *   · the scripts resolving a different project than the one you are in
  *
  *   jt-doctor              # everything, against the current stage
@@ -192,7 +192,7 @@ judge(
   const read = (file, pick) => {
     try {
       const doc = JSON.parse(readFileSync(file, 'utf8'));
-      if (pick(doc)) servers.push(file.replace(homedir(), '~'));
+      if (pick(doc) && !servers.includes(file.replace(homedir(), '~'))) servers.push(file.replace(homedir(), '~'));
     } catch {
       /* absent or unreadable: simply not a place it is configured */
     }
@@ -205,11 +205,21 @@ judge(
     : note('jtakeit mcp', 'no server named jtakeit configured — the plugin ships one in .mcp.json (https://mcp.jtakeit.com/mcp)');
 }
 
-// The Apify token: the plugin's .mcp.json sends it as the Apify server's bearer,
-// and jt-source talks to the API directly with it.
-judge('apify', 'apify', process.env.APIFY_TOKEN ? 'APIFY_TOKEN set' : 'APIFY_TOKEN not set — the Instagram scrape (MCP) and jt-source both need it', Boolean(process.env.APIFY_TOKEN));
-if (needed.has('apify'))
-  note('apify mcp', 'check `/mcp` shows apify connected before the first scrape');
+// Apify, the way jtakeit is reached: the plugin's .mcp.json names the server
+// and the first use signs in through the browser — no token in the environment.
+// Whether that sign-in happened only `/mcp` knows, so the stage that scrapes
+// says to look there; a script cannot.
+{
+  let configured = false;
+  try {
+    configured = Boolean(JSON.parse(readFileSync(join(PLUGIN_ROOT, '.mcp.json'), 'utf8')).mcpServers?.apify);
+  } catch {
+    /* unreadable: reported as not configured */
+  }
+  judge('apify', 'apify mcp', configured
+    ? 'configured — check `/mcp` shows apify connected; the first use signs in to your Apify account through the browser'
+    : 'no server named apify in the plugin\'s .mcp.json — reinstall the plugin', configured);
+}
 
 /*
  * The design plugin. The variants stage says "invoke frontend-design per variant"; where

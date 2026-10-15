@@ -2,8 +2,7 @@
   "mcpServers": {
     "apify": {
       "type": "http",
-      "url": "https://mcp.apify.com/?tools=actors,docs,khadinakbar/instagram-profile-scraper,apify/instagram-post-scraper,apify/instagram-search-scraper,goat255/instagram-stories-highlights-scraper",
-      "headers": { "Authorization": "Bearer ${APIFY_TOKEN}" }
+      "url": "https://mcp.apify.com/?tools=actors,docs,khadinakbar/instagram-profile-scraper,apify/instagram-post-scraper,apify/instagram-search-scraper,goat255/instagram-stories-highlights-scraper"
     },
     "jtakeit": {
       "type": "http",

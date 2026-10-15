@@ -24,5 +24,5 @@ Upload the result to Drive as a Google Sheet, hand over the link, and stop.
 Nothing here contacts anybody — a person picks a row and sends the pitch by
 hand, from their own account.
 
-If the Apify tools are missing, check `APIFY_TOKEN` is set (the plugin's
-`.mcp.json` sends it to the Apify server) and point at `/mcp`.
+If the Apify tools are missing, the Apify server has not been signed in: point
+at `/mcp`, `apify`, sign in in the browser.
