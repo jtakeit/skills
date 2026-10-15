@@ -128,7 +128,9 @@ scripts/
               the one query, and whether the page composes
   jt-pitch    record the pitch video, phone and desktop
   jt-clips    cut a video into short silent loops
+  jt-shots    every page, section by section, at a laptop and a phone
   jt-clean    take the working files out of the tree before a handover
+agents/       site-critic: reviews the built site from screenshots, returns fixes
 templates/    the variant switcher used while directions are compared
 assets/pitch/ where your own voice-over and music go
 ```

@@ -143,6 +143,20 @@ page carrying none of it.
 An angle is a job rather than a band, and the block is named after what it is on
 *this* page — `conviction`, `plates`, `letter`, not `features`.
 
+**Each section is built as one composition** from `docs/compositions.md` —
+split-media, bleed, statement, numbers, tiles, ledger, overlap, steps, people,
+quote, sticky, closing — chosen for what that section has to do, and **never
+the same one twice in a row**. Two two-column sections with the heading on the
+same side are the same composition, whatever their contents. Spend the design
+on one of them — usually a `bleed`, an `overlap` or a `statement` — so the page
+has a section somebody remembers. Record the sequence:
+
+```bash
+node "$JT/scripts/jt-state.mjs" set design.sections "statement, ledger, overlap, people, sticky, closing"
+```
+
+`jt-check` fails two neighbours built alike; `/jt-showroom` shows all twelve.
+
 On the outbound track these blocks are the easiest place to drift in the
 dishonest direction, so be exact about where the material comes from. Recognition
 copy is about the *visitor*, not a claim about the business, which is what makes
@@ -194,7 +208,13 @@ is the look the prospect's last agency already sold them.
 
 ## The hero
 
-Two decisions, and on this track they are the two cheapest things on the page to
+Two rules before anything else, because both specs broke them: the headline is
+**at most three lines on a laptop and five on a phone** — a seven-line
+headline is a paragraph set large — and the **one action is on the first
+screen of a 1440×780 window**, which is what a laptop shows once the browser's
+bars are drawn. `jt-check` measures both.
+
+Then two decisions, and on this track they are the two cheapest things on the page to
 get right.
 
 **The photograph is the person, wherever the business is one person.** It is
@@ -431,6 +451,21 @@ If they say no, a person archives the site in the panel (Sites → the row's men
 Later changes are the ordinary loop: `git pull`, commit, `import_branch`,
 `commit_and_build`, look again.
 
+## The critic, before anybody else looks
+
+`jt-check` measures; it cannot see that a page is dull, that a hero does not
+decide what it is, or that two sections say the same thing. Before the review
+gate, and after every round of fixes that changed the layout, hand the page to
+the **site critic** — the plugin's agent `jtakeit-sites:site-critic`, through
+the Agent tool, with the project's directory. It did not build the page and
+reads no code: it shoots every page section by section at a laptop and a phone
+(`jt-shots`) and returns an ordered list of what is broken, what is weak and
+what is not theirs, each with a concrete fix.
+
+Fix the list — all of it, or say to the developer which items you left and
+why — rebuild, `jt-check` again, and only then the review gate. Never show the
+developer a page the critic has not seen.
+
 ## The review gate
 
 This stage does not end because the page builds. It ends when a human has
@@ -484,6 +519,7 @@ the pitch is the whole page, and those are different jobs.
       feed has them, its arrangement chosen with the developer (`/jt-showroom`)
 - [ ] at least two moments below the hero a visitor does something with, each a
       different mechanism; no stack of identical boxes
+- [ ] `jt-check` passed and the site critic's list fixed (or what was left, said)
 - [ ] where booking is shown: `zone` and `hours` set, and `preflight` with
       `try_booking` passed — a failed check is a failure, not a tool error
 

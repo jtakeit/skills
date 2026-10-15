@@ -161,6 +161,9 @@ Guardrails that survive the design pass:
   material, not out of the shader it came from. One variant using it and
   another not is a real difference between directions; all three using it is
   one variant three times.
+- **Each section is a composition** from `docs/compositions.md`, never the same
+  one twice in a row; a variant that shares its section sequence with another
+  is one variant twice. Recorded in `design.sections`.
 - **The surface is chosen too, and `none` counts.** Edge and entrance are
   chosen per variant; the ground (`surface.pattern`) is empty by default and
   set only when the client asks for one — they see the six in `/jt-showroom`.
@@ -294,3 +297,19 @@ Then:
 node "$JT/scripts/jt-state.mjs" advance preview --note "3 variants ready"
 git add src jtk public && git commit -m "variants: paper, noir, poster" && git push
 ```
+
+## The critic, before anybody else looks
+
+`jt-check` measures; it cannot see that a page is dull, that a hero does not
+decide what it is, or that two sections say the same thing. Before the review
+gate, and after every round of fixes that changed the layout, hand the page to
+the **site critic** — the plugin's agent `jtakeit-sites:site-critic`, through
+the Agent tool, with the project's directory. It did not build the page and
+reads no code: it shoots every page section by section at a laptop and a phone
+(`jt-shots`) and returns an ordered list of what is broken, what is weak and
+what is not theirs, each with a concrete fix.
+
+Fix the list — all of it, or say to the developer which items you left and
+why — rebuild, `jt-check` again, and only then the review gate. Never show the
+developer a page the critic has not seen.
+
