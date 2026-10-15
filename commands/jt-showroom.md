@@ -13,8 +13,12 @@ colours and its scraped photographs (`.jtakeit/photos`, else `src/assets`) for
 the galleries; nothing in the project changes.
 
 ```bash
-npx --yes @jtakeit/astro@latest showroom $ARGUMENTS
+npx --yes "@jtakeit/astro@>=0.11.0" showroom $ARGUMENTS
 ```
+
+The showroom arrived in `@jtakeit/astro` 0.11.0. If npm answers that no version
+matches, it is not published yet: say so in one line and stop — do not try an
+older version, which has no `showroom` and only prints its list of commands.
 
 Run it in the background — it is a dev server — and wait for the line with the
 address. The first run of a version installs the scratch site, about a minute;
