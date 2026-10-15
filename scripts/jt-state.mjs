@@ -31,6 +31,7 @@ import {
   nowIso,
   readState,
   setPath,
+  siteHash,
   statePath,
   today,
   skillsVersion,
@@ -218,6 +219,25 @@ switch (command) {
     }
     if (to > from + 1) {
       die(`cannot skip from "${state.stage}" to "${target}". Finish ${ladder[from + 1]} first.`);
+    }
+    // Out of a stage that builds, only with the build checked: jt-check passed,
+    // on the files as they are now. The 8001 Barber and Schorem specs left the
+    // stage with no check run at all (15 October 2026) — a hero cut off at the
+    // fold, a menu item to nowhere — and a person found it instead.
+    if (['spec', 'variants', 'revisions'].includes(state.stage)) {
+      const unchecked = flag('unchecked', '');
+      const checks = state.checks;
+      const why = !checks
+        ? 'jt-check has not been run on this project'
+        : !checks.ok
+          ? `jt-check failed: ${(checks.failed ?? []).join(', ')}`
+          : checks.files !== siteHash(root)
+            ? 'the site has changed since jt-check last passed'
+            : '';
+      if (why && !unchecked) {
+        die(`${why}. Build, run \`node "$JT/scripts/jt-check.mjs" --dist ./dist\` until it passes, then advance. (A person may override with --unchecked "<why>", and the reason is logged.)`);
+      }
+      if (why) state.log.push({ stage: state.stage, at: nowIso(), note: `left unchecked: ${unchecked} (${why})` });
     }
     state.stage = target;
     state.stageStartedAt = today();

@@ -33,12 +33,12 @@
 
 import { execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { extname, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadChromium } from './lib/browser.mjs';
-import { STATE_DIR, STATE_FILE, findRoot, readState } from './lib/state.mjs';
+import { STATE_DIR, STATE_FILE, findRoot, readState, siteHash, writeState } from './lib/state.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -464,10 +464,13 @@ async function open(width, height) {
 // The hero and the one action have to be on screen without scrolling. A short
 // laptop is the case that gets missed, because nobody builds on one.
 
+// Windows, not screens: a 1440×900 laptop shows a page about 780 tall once
+// the browser's bars are drawn, and the Schorem hero that fitted 900 lost its
+// buttons at 776 (15 October 2026).
 const FOLD = [
-  [1440, 900],
-  [1280, 800],
-  [393, 852],
+  [1440, 780],
+  [1280, 680],
+  [393, 720],
 ];
 
 const foldProblems = [];
@@ -505,8 +508,231 @@ for (const [w, h] of FOLD) {
 
 foldProblems.length
   ? fail('first screen', foldProblems.join('; '))
-  : pass('first screen', `hero${sawCta ? ' and the one action' : ''} inside the fold at 1440, 1280 and 393`);
+  : pass('first screen', `hero${sawCta ? ' and the one action' : ''} inside the fold at 1440×780, 1280×680 and 393×720 — browser windows, not screens`);
 if (!sawCta) note('first screen', 'no button or in-page link found in the hero — is there a call to action?');
+
+// -- every page ---------------------------------------------------------------
+//
+// The site, not only its home page. Measured on what the build wrote, so a
+// header that drops a link on the second page, or a menu item that leads to
+// the same place as another, is found before a person clicks through it.
+
+/** The pages the build wrote: every top-level page, and one entry per collection. */
+function sitePages() {
+  if (flag('url') || !existsSync(dist)) return ['/'];
+  const found = [];
+  const walk = (dir, rel) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) {
+        if (name.startsWith('_') || name === 'v' || name.startsWith('.')) continue;
+        walk(full, `${rel}${name}/`);
+      } else if (name === 'index.html') found.push(rel || '/');
+      else if (name.endsWith('.html') && name !== '404.html') found.push(`${rel}${name.replace(/\.html$/, '')}`);
+    }
+  };
+  walk(dist, '/');
+  const depth = (p) => p.split('/').filter(Boolean).length;
+  const top = found.filter((p) => depth(p) <= 1);
+  const firstOfEach = new Map();
+  for (const p of found.filter((p) => depth(p) === 2).sort()) {
+    const parent = p.split('/').filter(Boolean)[0];
+    if (!firstOfEach.has(parent)) firstOfEach.set(parent, p);
+  }
+  return [...new Set([...top, ...firstOfEach.values()])].slice(0, 16);
+}
+const PAGES = sitePages();
+
+/** A page's file in dist, for the static reads. */
+const fileOf = (page) => {
+  const clean = page.replace(/^\/|\/$/g, '');
+  for (const f of [join(dist, clean, 'index.html'), join(dist, `${clean}.html`), join(dist, 'index.html')]) if (existsSync(f)) return f;
+  return null;
+};
+
+// The header: the same links on every page, each to a place of its own.
+if (!flag('url') && existsSync(dist)) {
+  const menus = new Map();
+  for (const page of PAGES) {
+    const file = fileOf(page);
+    if (!file) continue;
+    const html = readFileSync(file, 'utf8');
+    const header = /<header[\s\S]*?<\/header>/i.exec(html)?.[0] ?? '';
+    const links = [...header.matchAll(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)].map(([, href, inner]) => ({
+      href,
+      label: inner.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
+    }));
+    menus.set(page, links);
+  }
+  const labels = (links) => links.map((l) => l.label.toLowerCase()).filter(Boolean).sort().join(' · ');
+  const home = menus.get('/') ?? [...menus.values()][0] ?? [];
+  const drift = [...menus.entries()].filter(([, links]) => labels(links) !== labels(home)).map(([page, links]) => {
+    const missing = home.filter((h) => !links.some((l) => l.label.toLowerCase() === h.label.toLowerCase())).map((h) => h.label);
+    return `${page}${missing.length ? ` lacks ${missing.join(', ')}` : ' differs'}`;
+  });
+  if (!menus.size) note('header', 'no pages found in the build to compare');
+  else if (!home.length) fail('header', 'no <header> with links on the home page — a site needs its name and its sections at the top of every page');
+  else if (drift.length) fail('header', `the header is not the same on every page: ${drift.slice(0, 4).join('; ')} — an anchor that only exists on the home page is a link to /#…, not a link that disappears`);
+  else pass('header', `the same ${home.length} links on all ${menus.size} pages`);
+
+  // Each item to a place of its own, and a place that exists.
+  const shared = [];
+  const dead = [];
+  const byTarget = new Map();
+  for (const { href, label } of home) {
+    if (!label || /^(mailto|tel|https?):/.test(href)) continue;
+    const target = href.replace(/\/$/, '') || '/';
+    byTarget.set(target, [...(byTarget.get(target) ?? []), label]);
+    const [path, hash] = href.split('#');
+    const file = path ? fileOf(path) : fileOf('/');
+    if (path && path !== '/' && (!file || file === join(dist, 'index.html'))) dead.push(`${label} → ${href}`);
+    else if (hash && file && !new RegExp(`id="${hash}"`).test(readFileSync(file, 'utf8'))) dead.push(`${label} → ${href} (no #${hash} there)`);
+  }
+  for (const [target, names] of byTarget) if (names.length > 1) shared.push(`${names.join(' and ')} → ${target}`);
+  if (dead.length) fail('menu targets', `${dead.slice(0, 4).join('; ')} — leads nowhere`);
+  else if (shared.length) fail('menu targets', `${shared.slice(0, 3).join('; ')} — two items, one place: give each its own page or its own section (prices to /prices, booking to /prices#book)`);
+  else pass('menu targets', 'every header link leads to a place of its own that exists');
+}
+
+// Every page, at a laptop and a phone: text off the edge, empty boxes, and two
+// sections built the same way one after the other.
+{
+  const edges = [];
+  const empties = [];
+  const twins = [];
+  const tight = [];
+  for (const page of PAGES) {
+    for (const [w, h] of [[1440, 900], [393, 852]]) {
+      const p = await browser.newPage({ viewport: { width: w, height: h } });
+      try {
+        await p.goto(new URL(page.replace(/^\//, ''), url).href, { waitUntil: 'networkidle', timeout: 60_000 });
+      } catch {
+        await p.close();
+        continue;
+      }
+      await settle(p);
+      // Everything revealed, so a block still waiting for its entrance is
+      // measured where it will be, not as an empty band.
+      await p.evaluate(() => document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('is-in')));
+      await p.waitForTimeout(700);
+      const m = await p.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        const visible = (el) => {
+          const cs = getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          return cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0.05 && r.width > 0 && r.height > 0;
+        };
+        const inScroller = (el) => {
+          for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+            const cs = getComputedStyle(n);
+            if (/(auto|scroll)/.test(cs.overflowX) || cs.position === 'fixed') return true;
+          }
+          return false;
+        };
+        const label = (el) => `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? '.' + el.className.split(/\s+/)[0] : ''} «${(el.textContent || '').trim().slice(0, 30)}»`;
+
+        // Text closer than 12px to an edge of the screen.
+        const edge = [...document.querySelectorAll('main p, main h1, main h2, main h3, main h4, main li, main td, main th, main dt, main dd, main blockquote, main figcaption, main label')]
+          .filter((el) => visible(el) && (el.textContent || '').trim().length > 2 && !inScroller(el))
+          .filter((el) => {
+            const r = el.getBoundingClientRect();
+            return r.left < 12 || r.right > vw - 12;
+          })
+          .slice(0, 3)
+          .map(label);
+
+        // Text pressed against the frame it sits in: a bordered or filled box
+        // whose text starts at its edge — a price list drawn as a table with
+        // no padding in its cells.
+        const framed = [];
+        for (const el of document.querySelectorAll('main p, main h2, main h3, main h4, main li, main td, main th, main dt, main dd, main span, main strong')) {
+          if (!visible(el) || !(el.textContent || '').trim() || el.children.length > 2) continue;
+          let box = el.parentElement;
+          for (let d = 0; box && d < 4 && box !== document.body; d++, box = box.parentElement) {
+            const cs = getComputedStyle(box);
+            const bordered = ['Left', 'Right', 'Top'].some((side) => parseFloat(cs[`border${side}Width`]) > 0 && cs[`border${side}Style`] !== 'none');
+            const filled = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent' && box.tagName !== 'MAIN' && box.tagName !== 'SECTION';
+            if (!bordered && !filled) continue;
+            const r = el.getBoundingClientRect();
+            const b = box.getBoundingClientRect();
+            if (r.left - b.left < 8 && b.width < vw - 4) framed.push(label(el));
+            break;
+          }
+          if (framed.length >= 3) break;
+        }
+
+        // A box with nothing in it: no words, no picture, a size of its own.
+        const MEDIA = 'img, picture, video, canvas, svg, iframe, input, textarea, select, button';
+        const empty = [...document.querySelectorAll('main div, main figure, main aside, main span')]
+          .filter((el) => {
+            if (!visible(el) || el.closest('[aria-hidden="true"]')) return false;
+            const cs = getComputedStyle(el);
+            // A decorative layer laid over or under a block is not a box.
+            if (cs.position === 'absolute' || cs.position === 'fixed' || (cs.maskImage && cs.maskImage !== 'none')) return false;
+            const r = el.getBoundingClientRect();
+            if (r.width < 160 || r.height < 160) return false;
+            if ((el.textContent || '').trim()) return false;
+            if (el.querySelector(MEDIA)) return false;
+            if (cs.backgroundImage && cs.backgroundImage !== 'none') return false;
+            return true;
+          })
+          // the outermost of nested empties
+          .filter((el, _, all) => !all.some((o) => o !== el && o.contains(el)))
+          .slice(0, 3)
+          .map((el) => {
+            const r = el.getBoundingClientRect();
+            return `${label(el)} ${Math.round(r.width)}×${Math.round(r.height)}`;
+          });
+
+        // Each section's composition: how many columns its layout has, and on
+        // which side its heading sits. Two in a row built alike read as one
+        // block said twice.
+        const sections = [...document.querySelectorAll('main > *')].filter(visible);
+        const shapeOf = (sec) => {
+          let box = sec;
+          for (let d = 0; d < 4; d++) {
+            const kids = [...box.children].filter(visible);
+            if (kids.length >= 2) break;
+            if (kids.length === 1) box = kids[0];
+            else break;
+          }
+          const kids = [...box.children].filter(visible);
+          const lefts = [...new Set(kids.map((k) => Math.round(k.getBoundingClientRect().left / 24)))];
+          const head = sec.querySelector('h2, h1, h3');
+          const r = head?.getBoundingClientRect();
+          const side = !r ? 'none' : r.left > vw * 0.4 ? 'right' : r.right < vw * 0.6 ? 'left' : 'centre';
+          return { columns: lefts.length, side, name: head ? (head.textContent || '').trim().slice(0, 32) : sec.tagName.toLowerCase() };
+        };
+        const shapes = sections.map(shapeOf);
+        const twin = [];
+        for (let i = 1; i < shapes.length; i++) {
+          const a = shapes[i - 1];
+          const b = shapes[i];
+          if (a.columns >= 2 && a.columns === b.columns && a.side === b.side && a.side !== 'none') twin.push(`«${a.name}» and «${b.name}»`);
+        }
+        return { edge, empty, twin, framed };
+      });
+      await p.close();
+      const where = `${page} at ${w}`;
+      if (m.edge.length) edges.push(`${where}: ${m.edge.join(', ')}`);
+      if (m.empty.length) empties.push(`${where}: ${m.empty.join(', ')}`);
+      if (m.framed.length) tight.push(`${where}: ${m.framed.join(', ')}`);
+      if (w === 1440 && m.twin.length) twins.push(`${page}: ${m.twin.join('; ')}`);
+    }
+  }
+  edges.length
+    ? fail('text at the edge', `${edges.slice(0, 3).join(' · ')} — text needs the page's side margin (16px and up), and a table or list inside a block keeps the block's padding`)
+    : pass('text at the edge', `no text within 12px of the edge on ${PAGES.length} page(s), laptop and phone`);
+  tight.length
+    ? fail('padding', `${tight.slice(0, 3).join(' · ')} — text touching the border or the fill of its own box; give the box padding`)
+    : pass('padding', 'text keeps its distance from the frames it sits in');
+  empties.length
+    ? fail('empty boxes', `${empties.slice(0, 3).join(' · ')} — a frame with nothing in it reads as a picture that failed to load; fill it or take it out`)
+    : pass('empty boxes', 'no empty frames');
+  twins.length
+    ? fail('repeated layout', `${twins.slice(0, 3).join(' · ')} — two sections in a row built the same way; change the second's composition (docs/compositions.md)`)
+    : pass('repeated layout', 'no two neighbouring sections built alike');
+}
 
 // -- orphans -----------------------------------------------------------------
 //
@@ -1390,6 +1616,27 @@ for (const r of results) {
 
 const failures = results.filter((r) => r.ok === false);
 const notes = results.filter((r) => r.ok === null);
+
+// Recorded, so the stage cannot be left without it: `jt-state advance` out of a
+// building stage reads this, and refuses a check that failed or that was run
+// on a commit other than the one being handed on.
+if (state) {
+  let head = '';
+  try {
+    head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    /* not a repository: recorded without a commit */
+  }
+  state.checks = {
+    at: new Date().toISOString(),
+    head,
+    files: siteHash(root),
+    ok: failures.length === 0,
+    failed: failures.map((f) => f.name),
+    pages: PAGES.length,
+  };
+  writeState(root, state);
+}
 console.log('');
 if (failures.length) {
   console.log(`${failures.length} failure(s). Fix these before asking anybody to look at the page.`);

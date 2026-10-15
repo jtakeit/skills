@@ -275,3 +275,16 @@ first. Design direction comes from the `frontend-design` plugin, which
   handover mirrors the repository to the client; `jt-clean` takes `.jtakeit/`,
   `STATUS.md`, `PORTRAIT.md`, `REVIEW.md`, agent instructions, the `/v/` pages
   and the preview shell out of the tree first, and its scan is not advisory.
+
+
+## A stage that builds is left only checked
+
+`jt-state advance` out of `spec`, `variants` or `revisions` refuses unless
+`jt-check` passed on the files as they are now — it records its result, with a
+fingerprint of `src/`, `jtk/` and `public/`, in the state. Change a file after
+it passed and it has to pass again. The check covers every page the build
+wrote, not only the home page: the first screen in real browser windows
+(1440×780, 1280×680, 393×720), the header the same on every page, every menu
+item to a place of its own, text off the edges and off the frames it sits in,
+no empty boxes, no two neighbouring sections built alike. A person can
+override with `--unchecked "<why>"`; the reason is logged. An agent does not.

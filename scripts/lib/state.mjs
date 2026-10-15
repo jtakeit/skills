@@ -8,8 +8,9 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -425,4 +426,43 @@ ${facts}
 
 ${log}
 `;
+}
+
+
+/**
+ * A fingerprint of what the site is made of — src/, jtk/, public/ and the
+ * Astro config — so a check can be held to the files it was run on. Not the
+ * commit: the commit moves when the check's own result is committed, and a
+ * stage would never be leavable. The state file itself is left out for the
+ * same reason.
+ */
+export function siteHash(root) {
+  const hash = createHash('sha256');
+  const walk = (dir) => {
+    let names;
+    try {
+      names = readdirSync(dir).sort();
+    } catch {
+      return;
+    }
+    for (const name of names) {
+      if (name === 'node_modules' || name.startsWith('.')) continue;
+      const full = join(dir, name);
+      const info = statSync(full);
+      if (info.isDirectory()) walk(full);
+      else {
+        hash.update(relative(root, full));
+        hash.update(readFileSync(full));
+      }
+    }
+  };
+  for (const part of ['src', 'jtk', 'public']) walk(join(root, part));
+  for (const name of ['astro.config.mjs', 'astro.config.ts', 'package.json']) {
+    const full = join(root, name);
+    if (existsSync(full)) {
+      hash.update(name);
+      hash.update(readFileSync(full));
+    }
+  }
+  return hash.digest('hex').slice(0, 16);
 }
