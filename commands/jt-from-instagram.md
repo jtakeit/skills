@@ -22,7 +22,7 @@ while it is a preview; a site is paid for only once a person launches it.
 Look for the Apify profile-scraper tool and the jtakeit tools (`create_site`)
 among the tools you have. A server that has not been signed in yet has none. If
 either is missing, stop before the scrape and say, in one message, which one
-and how: `/mcp`, choose `apify` or `jtakeit`, sign in in the browser that opens
+and how: `/mcp`, choose `plugin:jtakeit-sites:apify` or `plugin:jtakeit-sites:jtakeit`, then Authenticate, and sign in in the browser that opens (before the sign-in Apify's line can read «connected · tools fetch failed» — it is the same step)
 — an Apify account is the developer's own and every run is billed to it; a
 jtakeit account is free until a site goes live. The tools appear in the same
 session; then run the command again. Do not scrape with jtakeit missing: the

@@ -38,7 +38,9 @@ says it out loud.
 to it. The plugin's `.mcp.json` names Apify's MCP server, which signs in
 through the browser the first time, as jtakeit's does. If the Apify tools are
 missing, the server has not been signed in: ask the developer to open `/mcp`,
-choose `apify` and sign in — the tools appear in the same session.
+choose `plugin:jtakeit-sites:apify`, then Authenticate, and sign in — the tools appear in the same
+session. Before the sign-in its line can read «connected · tools fetch failed»;
+it is the same step.
 
 The server exposes Apify's generic Actor tools alongside ours, so it *can* reach
 the whole Store. This pipeline calls two Actors, in this order. Read

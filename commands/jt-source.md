@@ -25,4 +25,4 @@ Nothing here contacts anybody — a person picks a row and sends the pitch by
 hand, from their own account.
 
 If the Apify tools are missing, the Apify server has not been signed in: point
-at `/mcp`, `apify`, sign in in the browser.
+at `/mcp`, `plugin:jtakeit-sites:apify`, Authenticate, sign in in the browser.

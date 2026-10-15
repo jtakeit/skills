@@ -217,7 +217,7 @@ judge(
     /* unreadable: reported as not configured */
   }
   judge('apify', 'apify mcp', configured
-    ? 'configured — check `/mcp` shows apify connected; the first use signs in to your Apify account through the browser'
+    ? 'configured — in `/mcp`, plugin:jtakeit-sites:apify, Authenticate: it signs in to your Apify account through the browser («tools fetch failed» before that is the same step)'
     : 'no server named apify in the plugin\'s .mcp.json — reinstall the plugin', configured);
 }
 

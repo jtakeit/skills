@@ -36,7 +36,11 @@ For each ✗:
 Look for the jtakeit tools (`create_site`, `list_sites`) and the Apify
 profile-scraper tool among the tools you have. A server that has not been
 signed in has none. For each one missing, ask the developer to open `/mcp`,
-choose it, and sign in in the browser that opens:
+choose it by the name `/mcp` lists it under — `plugin:jtakeit-sites:apify`, `plugin:jtakeit-sites:jtakeit` — then
+**Authenticate**, and sign in in the browser that opens. Before its sign-in
+Apify's line can read «connected · tools fetch failed» rather than «needs
+authentication»: Apify answers the handshake without an account and refuses
+only the tool list. Say so, or it reads as broken. Then:
 
 - **jtakeit** — Google or an email link, then the studio's name. Free until a
   site goes live.

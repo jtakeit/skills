@@ -22,7 +22,7 @@ solo practitioners at the end of it.
 **Your own Apify account.** Every Actor here runs on it and is billed to it;
 the plugin carries no account and no credit. The plugin's `.mcp.json` names
 Apify's MCP server, which signs in through the browser the first time — `/mcp`,
-`apify`, sign in. `jt-source --dataset` reads the run's dataset by its id; on an
+`plugin:jtakeit-sites:apify`, Authenticate. `jt-source --dataset` reads the run's dataset by its id; on an
 account whose storages are restricted it says so, and the dataset is saved
 through the MCP server into `raw.json` and passed with `--in` instead (or an
 `APIFY_TOKEN` is set). Never a token in a file that gets committed.

@@ -58,9 +58,11 @@ function appOn(owner) {
     return { known: false, why: `${owner} is a personal account — GitHub does not tell anybody which apps it has; confirm it yourself` };
   const listed = gh([`orgs/${owner}/installations`]);
   if (!listed) return { known: false, why: `gh cannot list ${owner}'s apps — you may not be an owner of it; confirm it yourself` };
-  const found = (listed.installations ?? []).find((i) => i.app_slug === APP);
+  // jtakeit-connect, or a staging platform's own App beside it (jtakeit-connect-staging).
+  const found = (listed.installations ?? []).find((i) => i.app_slug === APP)
+    ?? (listed.installations ?? []).find((i) => i.app_slug?.startsWith(`${APP}-`));
   if (!found) return { known: true, installed: false };
-  return { known: true, installed: true, all: found.repository_selection === 'all' };
+  return { known: true, installed: true, slug: found.app_slug, all: found.repository_selection === 'all' };
 }
 
 function reportApp(owner) {
@@ -72,10 +74,10 @@ function reportApp(owner) {
     console.log(`app      not installed on ${owner}`);
     console.log(`         install it at ${APP_URL} (choose ${owner}, All repositories) — a person's step`);
   } else if (!app.all) {
-    console.log(`app      installed on ${owner}, on selected repositories only`);
+    console.log(`app      ${app.slug} installed on ${owner}, on selected repositories only`);
     console.log('         every new speculative site would wait for a person to add it; switch it to All repositories');
   } else {
-    console.log(`app      installed on ${owner}, all repositories`);
+    console.log(`app      ${app.slug} installed on ${owner}, all repositories`);
   }
   return app;
 }

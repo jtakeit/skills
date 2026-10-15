@@ -23,6 +23,6 @@ business (`jt-state archive --reason "…"`). Say so plainly rather than buildin
 something on nothing.
 
 If the Apify tools are not available, the Apify server has not been signed in:
-point at `/mcp`, `apify`, sign in in the browser. Offer the
+point at `/mcp`, `plugin:jtakeit-sites:apify`, Authenticate, sign in in the browser. Offer the
 alternative meanwhile — the developer pastes the bio, highlights and last dozen
 captions in by hand, which is often faster anyway.

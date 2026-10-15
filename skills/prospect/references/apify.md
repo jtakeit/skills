@@ -49,11 +49,12 @@ written down somewhere.
 **You need your own Apify account**, and every run is billed to it — the plugin
 carries the server's address and nothing else. There is no token to set: the
 server signs in with OAuth, the way the jtakeit server does. The first time an
-Apify tool is needed, `/mcp` lists `apify` as needing authentication; choose
-it, sign in to Apify in the browser that opens, approve access, and the tools
+Apify tool is needed, `/mcp` lists `plugin:jtakeit-sites:apify` — as «needs authentication», or as
+«connected · tools fetch failed», because Apify answers the handshake without
+an account and refuses only the tool list. Choose it, then Authenticate, sign in to Apify in the browser that opens, approve access, and the tools
 appear in the same session.
 
-Check with `/mcp`: `apify` should be listed and Connected. If it is listed but
+Check with `/mcp`: `plugin:jtakeit-sites:apify` should be listed as connected, with its tools. If it is listed but
 not connected, it has not been signed in yet, or the sign-in expired — sign in
 again from there.
 
