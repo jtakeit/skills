@@ -147,6 +147,9 @@ Worth saying in the message alongside the video, and worth keeping short:
 - that we made this because of something specific about *their* profile — name
   the thing, it is the reason the message gets read;
 - the same ask as the voice-over, not a second one;
+- nothing from `.jtakeit/sample.json` — a sample price or hour said in a pitch
+  is a claim about their business; if the video shows one, say in the message
+  that the prices on it are placeholders;
 - where the portrait's «What it costs them» has an argument, it in one line, in
   their prices — «Fresha keeps CHF 8 of every new client's CHF 40 cut; booked on
   your own page, it keeps nothing» — and never a guess at their monthly total.

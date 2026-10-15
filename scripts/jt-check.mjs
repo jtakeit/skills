@@ -73,7 +73,31 @@ const speculative = has('spec') || (track === 'outbound' && ['prospect', 'spec',
 
 /** The facts on the business's own booking page, as jt-booking wrote them. */
 function publishedFacts() {
-  const out = { any: false, phones: new Set(), times: new Set(), prices: new Set(), streets: [], postcodes: new Set(), rated: false };
+  const out = { any: false, phones: new Set(), times: new Set(), prices: new Set(), streets: [], postcodes: new Set(), rated: false, samples: [] };
+
+  /*
+   * Samples, declared. Where the business published no price list, no hours
+   * or nobody's name, the spec may fill the gap with a plausible example — a
+   * page with an empty price list and a booking form nobody can walk is worse
+   * for the pitch than a marked guess (Schorem, 15 October 2026). Declared in
+   * .jtakeit/sample.json, so the check passes them, says them, and the pitch
+   * knows them. Never an address, a phone number, a rating or a review: those
+   * are claims a stranger acts on.
+   */
+  try {
+    const sample = JSON.parse(readFileSync(join(root, '.jtakeit', 'sample.json'), 'utf8'));
+    for (const fact of sample.facts ?? []) {
+      const value = String(fact.value ?? '');
+      if (fact.kind === 'price') out.prices.add(Number(value.replace(/[^\d.]/g, '')));
+      else if (fact.kind === 'time') out.times.add(value.replace('.', ':').padStart(5, '0'));
+      else continue;
+      out.samples.push(`${fact.kind} ${value}${fact.where ? ` (${fact.where})` : ''}`);
+    }
+    out.declared = (sample.facts ?? []).length;
+  } catch {
+    /* no samples: every fact on the page is published or it fails */
+  }
+
   let found;
   try {
     found = JSON.parse(readFileSync(join(root, '.jtakeit', 'booking.json'), 'utf8'));
@@ -203,6 +227,7 @@ if (html) {
     let shared = 0;
     for (const [what, re, ok] of patterns)
       for (const [m] of text.matchAll(re)) ok(m) ? shared++ : found.add(`${what} («${m.trim()}»)`);
+    if (published.declared) note('samples', `${published.declared} sample fact(s) declared in .jtakeit/sample.json — say every one of them to the developer, and keep them out of the pitch's words`);
     found.size
       ? fail('unconfirmed facts', `the page states ${[...found].join(', ')} — nobody confirmed it${published.any ? ', and the booking page does not say it' : ''}`)
       : pass('unconfirmed facts', shared ? `${shared} fact(s) on the page, each one published on their booking page` : 'no address, hours, prices, phone, experience or ratings');

@@ -100,7 +100,9 @@ check that fails is the finding; fix it, rebuild, and run it again.
 
 ## 5. The link
 
-`get_preview_link`, and print it with one line on what it is: a private
+`get_preview_link`, and print it with one line on what it is — then, if
+`.jtakeit/sample.json` declares anything, the list of samples on the page and
+that they are replaced or removed before the business sees it: a private
 preview, not indexed, that expires; mint a fresh one when it is needed again.
 Advance to `pitch` and stop. The next steps are the developer's choice:
 `/jt-pitch` for the video, or the link itself, sent by a person from their own

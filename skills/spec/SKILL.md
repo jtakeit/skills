@@ -247,6 +247,39 @@ all. Leave `surface.pattern` empty. The edge and the entrance are still yours
 to choose (`docs/surface.md`); the ground is the developer's to ask for, and
 `/jt-showroom` is where they see the six.
 
+## When the material is missing: a sample, declared
+
+A price list with no prices, a team page of bare names, a booking form with
+nothing to book — each is worse for the pitch than a plausible example, and
+each is what a strict reading of the rule below produced (Schorem, 15 October
+2026). So where the business published nothing, **fill the gap with a sample
+and declare it**:
+
+- **What may be a sample**: prices and lengths of services, opening hours, a
+  short line about a team member, a service's description, a journal post's
+  subject. Plausible for the trade and the city — a Rotterdam cut is not CHF 15.
+- **What never is**: an address, a phone number, an email, a rating, a review,
+  a year founded, a customer's words, a person's face. A stranger acts on
+  those. A team member with no photograph gets a monogram, not somebody else's
+  face; one with no published name is a role («Barber»), not an invented name.
+- **Declared** in `.jtakeit/sample.json`, one entry per fact:
+
+  ```json
+  { "facts": [
+      { "kind": "price", "value": "48", "where": "jtk/content/prices/cut.json", "why": "no price list published" },
+      { "kind": "time",  "value": "09:00", "where": "jtk/bookings.json", "why": "hours not published" }
+    ],
+    "content": [
+      { "what": "the line about Cris", "where": "jtk/content/barbers/cris.json" }
+    ] }
+  ```
+
+  `jt-check` passes a declared price or time and fails any other; the same file
+  is how the pitch knows what it must not say.
+- **Said**, in the message that hands the preview over: every sample, where it
+  is, and that it is replaced with the real thing — or taken out — before the
+  link reaches the business. Not a footnote; a list.
+
 ## The rule that makes this honest
 
 **The site may not state a fact nobody confirmed.**
@@ -259,7 +292,8 @@ something untrue about them.
 So:
 
 - **No address, no hours, no prices, no phone number** unless the video is going
-  to say where it came from, which it will not. Design the page so it does not
+  to say where it came from, which it will not — hours and prices may be a
+  declared sample (above); an address and a phone number never. Design the page so it does not
   need them: a contact section can be the enquiry form and an invitation without
   a printed timetable.
 - **Except what they published themselves.** When the portrait's «Published by
