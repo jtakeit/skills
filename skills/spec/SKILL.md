@@ -1,12 +1,12 @@
 ---
 name: spec
-description: Stage 1 of the outbound track — build one speculative landing page from the prospect's portrait, on their own photographs and in their own voice, with @jtakeit/astro, and put it on jtakeit as a private preview the pitch video is recorded from. Load after the portrait is written, when the user says build the spec site, make the mock, or is editing an outbound project before the pitch. The site never launches and never states an unconfirmed fact.
+description: Stage 1 of the outbound track — build the speculative site from the prospect's portrait (the landing, and the pages the developer asks for — the team, the price list, a journal), on their own photographs and in their own voice, with @jtakeit/astro, and put it on jtakeit as a private preview the pitch video is recorded from. Load after the portrait is written, when the user says build the spec site, make the mock, or is editing an outbound project before the pitch. The site never launches and never states an unconfirmed fact.
 ---
 
 # Stage 1 (outbound) · The spec build
 
-One page. Theirs enough that they recognise themselves in it within three
-seconds of the video starting. Built from `PORTRAIT.md`, written in the
+A landing, and the pages the developer asks for. Theirs enough that they
+recognise themselves in it within three seconds of the video starting. Built from `PORTRAIT.md`, written in the
 repository `jt-init` made, and put on jtakeit as a **private preview** — a link,
 not an indexed address, and never launched until they say yes.
 
@@ -15,12 +15,38 @@ below: `node_modules/@jtakeit/astro/docs/` once `npm ci` has run — `kit.md`
 first, then `shapes.md`, `photos.md`, `hero-motion.md`, `surface.md`,
 `catalogue.md`, `pages.md`.
 
-## One page, not three
+## One direction, not three
 
 Stage 1 of the inbound track builds N variants because a paying client chooses.
-There is no client here. Build the single best answer to the portrait — the
-video shows one page, and a prospect offered three directions has been given
-homework instead of a gift.
+There is no client here. Build the single best answer to the portrait — a
+prospect offered three directions has been given homework instead of a gift.
+
+## The pages: asked, not assumed
+
+The landing is the core — it is what the pitch opens on. What else the site
+has is the developer's to say, once, in the same message as the booking
+question, offered from what the portrait found rather than from a list:
+
+- **The team** — a page of masters, one entry each. The salon kit already
+  declares the collection (`jtk/content/masters/`); fill it with the names the
+  business published (its booking page's team, its captions), and where it
+  published none, one entry for the person who runs it — the others are the
+  owner's to add in the panel, and the page says nothing about them meanwhile.
+- **The price list** — the services as their own page, where the business
+  published its prices (`.jtakeit/booking.json`). The kit's services
+  collection is it; the landing keeps a short version and links there.
+- **The work** — a page of its own for the gallery, where the feed has more
+  than a landing can carry (forty and up).
+- **A journal** — only if the developer asks (`docs/collections.md`: an empty
+  blog says the business stopped caring). If yes, two or three posts on what
+  the captions keep coming back to, written in their voice from their own
+  material — never an event, an offer or a date nobody published.
+  `jtk create --blog`, or the two lines at the foot of `blocks.ts`.
+
+Recommend, with the reason, and let them answer: «landing + team + prices — he
+publishes all three on Fresha; no journal, his captions are a line each». Record
+the answer as `design.pages`. Every page gets the header and the footer, and
+the header's anchors become links.
 
 Use the `frontend-design` skill once, with the portrait as the brief. Its
 material is unusually good here: the palette comes off their own photographs,

@@ -7,8 +7,10 @@ Build the spec site. Extra direction: $ARGUMENTS
 
 Load `jtakeit-sites:spec`. How the site is built — blocks, pages, photographs,
 the enquiry form — is in `node_modules/@jtakeit/astro/docs/`, `kit.md` first.
-Use `frontend-design` once, with `PORTRAIT.md` as the brief — one page, not
-variants, because there is no client yet to choose between them.
+Use `frontend-design` once, with `PORTRAIT.md` as the brief — one direction,
+not variants, because there is no client yet to choose between them. Ask once
+which pages beside the landing (the team, the price list, the work, a journal),
+recommending from what the portrait found.
 
 Two rules that are not style preferences:
 

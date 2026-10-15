@@ -73,7 +73,9 @@ Before a line of the page, in this order — the platform's own
    in one line: the page appears there as it is written, and the corner says
    where the site is on the platform.
 
-Then build one page per `jtakeit-sites:spec`, from the portrait, with
+Then ask, once, which pages beside the landing — the team, the price list, the
+work, a journal — recommending from what the portrait found
+(`jtakeit-sites:spec` → *The pages*), and build them per `jtakeit-sites:spec`, from the portrait, with
 `node_modules/@jtakeit/astro/docs/` for construction. It states **no
 unconfirmed fact** — no address, hours, prices or phone number read off a
 caption — and it says "could look like", never "your new website". Build it

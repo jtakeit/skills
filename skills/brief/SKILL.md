@@ -129,6 +129,9 @@ wrong guess is a refusal or a wrong page later:
 - **Where the enquiries go** — a Telegram chat or an email address, which a
   person links in the panel (**The site → Notifications**). An agent cannot
   link one; ask which, and say it is theirs to do before the launch.
+- **The pages.** The landing, and which of the rest: the team (one entry per
+  master; the panel adds more later), the price list, the work, a journal —
+  recommended from what the business has, not ticked by default.
 - **The languages.** One, unless the developer names a second — a second
   language is a second site to keep written, every page and every post, for
   ever. A blog only where somebody will write it; an empty one says the
