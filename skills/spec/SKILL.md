@@ -40,7 +40,6 @@ happens when the shape is never a decision.
 node "$JT/scripts/jt-state.mjs" set design.hero portrait-led
 node "$JT/scripts/jt-state.mjs" set design.form letter
 node "$JT/scripts/jt-state.mjs" set design.type "all serif"
-node "$JT/scripts/jt-state.mjs" set design.pattern construction
 node "$JT/scripts/jt-state.mjs" set design.edge corners
 node "$JT/scripts/jt-state.mjs" set design.reveal draw
 ```
@@ -215,11 +214,12 @@ all see one frame of it. See `docs/hero-motion.md`.
 A field and a photograph can share a hero; they must not compete for it. The
 field goes quiet where the picture lands, or the picture stands alone.
 
-**Under the hero, the page is printed on something.** A spec build with no field
-and no ground is a white page with words on it, which is the look the prospect
-already has. `docs/surface.md` is the still catalogue — six grounds, in their
-colours, no canvas and no script. Pick a ground, an edge and an entrance, or say
-why none.
+**No ground unless the developer asks for one.** A pattern under the whole page
+(`surface.pattern`) is off by default: on a page carrying the business's own
+photographs it competes with them, and on a dark palette it does not read at
+all. Leave `surface.pattern` empty. The edge and the entrance are still yours
+to choose (`docs/surface.md`); the ground is the developer's to ask for, and
+`/jt-showroom` is where they see the six.
 
 ## The rule that makes this honest
 

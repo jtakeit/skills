@@ -1,5 +1,5 @@
 ---
-description: Open the showroom — every hero field, ground, edge, entrance and gallery, live on localhost, in this project's colours and on its photographs
+description: Open the showroom — every hero field, ground, edge, entrance and gallery, live on localhost, in this project's colours
 argument-hint: "[--photos <dir>]"
 ---
 
@@ -9,8 +9,9 @@ The showroom is the scaffold's own: `@jtakeit/astro` lays out a scratch copy of
 itself, outside this project, and shows every piece it ships on one page — the
 ten hero fields, the grounds, the edges, the entrances and every gallery
 arrangement, live. Run here it uses this project's `jtk/design.json` for the
-colours and its scraped photographs (`.jtakeit/photos`, else `src/assets`) for
-the galleries; nothing in the project changes.
+colours; the galleries show the showroom's own stock photographs (Pexels,
+credited in the package). To see them on this business's work, on this machine
+only, add `--photos .jtakeit/photos`. Nothing in the project changes.
 
 ```bash
 npx --yes "@jtakeit/astro@>=0.11.0" showroom $ARGUMENTS
@@ -25,8 +26,8 @@ address. The first run of a version installs the scratch site, about a minute;
 later runs start at once. Then give the developer one line:
 
 - the address, `http://localhost:4330/showroom/`;
-- what it is in: this project's colours and how many of its photographs, or a
-  sample palette when there is no `jtk/design.json` yet.
+- what it is in: this project's colours, or a sample palette when there is no
+  `jtk/design.json` yet.
 
 Use it to choose with the developer rather than for them: the name under each
 piece is what goes in `jtk/design.json` (`field`, `surface.pattern`,

@@ -128,8 +128,9 @@ client can say "that one" without hesitating.
 `docs/shapes.md` carries three catalogues — seven hero anatomies, six page
 forms, six type pairings — and directions that share all three are one direction
 in three colourways. `docs/surface.md` carries three more, cheaper to vary and
-just as visible from across the room: the ground the page is printed on, the
-edge its blocks are drawn with, how they arrive. A direction that differs only
+just as visible from across the room: the edge its blocks are drawn with, how
+they arrive — and the ground the page is printed on, which stays empty unless
+the client asks for one. A direction that differs only
 in its surface is still one direction; a direction that shares its surface with
 the other two has thrown away the cheapest difference it had. Three variants
 built in one sitting tend to ship with an identical section sequence; take a
@@ -160,11 +161,15 @@ Guardrails that survive the design pass:
   material, not out of the shader it came from. One variant using it and
   another not is a real difference between directions; all three using it is
   one variant three times.
-- **The surface is chosen too, and `none` counts.** Ground, edge, entrance —
-  three values in `jtk/design.json`, recorded in `design.*` when the client
-  picks (`docs/surface.md`).
-- **Animation is restrained and always optional.** Scroll reveals, hover states,
-  at most one orchestrated moment. Everything must be readable and usable with
+- **The surface is chosen too, and `none` counts.** Edge and entrance are
+  chosen per variant; the ground (`surface.pattern`) is empty by default and
+  set only when the client asks for one — they see the six in `/jt-showroom`.
+  All in `jtk/design.json`, recorded in `design.*` when the client picks
+  (`docs/surface.md`).
+- **Motion that runs on its own is restrained.** The hero, and at most one
+  bounded thing beside it. Moments a visitor *does* — a gallery thrown or
+  turned, a picture that answers the pointer — are welcome below the hero,
+  two or three of them, each a different mechanism. Everything must be readable and usable with
   JavaScript off and with `prefers-reduced-motion: reduce`. Over-animation is
   the loudest tell that a page was generated.
 - **Nothing scrolls sideways on its own.** A rail that moves while it is being
