@@ -58,6 +58,34 @@ what the stop conditions are made of, and it is cheap enough to run before
 deciding anything. It does **not** return captions or usable images — do not ask
 it for material. Save it to `.jtakeit/instagram.json`.
 
+**Then, how they take bookings today** — free, no Actor:
+
+```bash
+node "$JT/scripts/jt-booking.mjs"          # reads externalUrl from .jtakeit/instagram.json
+```
+
+The bio link says how the business takes appointments now: a booking platform
+(Fresha, Treatwell, Booksy, …), a link hub, a messenger, their own site, or
+nothing. `jt-booking` unwraps `l.instagram.com`, follows a hub to the booking
+and site links on it, names the platform and reads the page's structured data
+into `.jtakeit/booking.json`: services with prices and lengths, hours, address,
+phone, the team's first names, the rating, and their other addresses (`also` —
+often a site of their own). That is what the business **published itself**, on
+a page it controls — a different thing from a caption, and the spec may state
+it (`jtakeit-sites:spec`). Say what was found in one line to the developer: «on
+Fresha, 3 services CHF 25–40, Mon–Sat 11–21, 189 reviews; also has 8001.hair».
+
+If the platform refuses the script (HTTP 503/429), open the page with
+Playwright and read the same fields there — or skip it and say so. A page with
+no structured data still names the platform, which is the half that matters
+for the pitch.
+
+Then what that platform costs them — its subscription and its commission, read
+from [references/booking-platforms.md](references/booking-platforms.md) — goes in
+the portrait's «What it costs them»: the rule and their own prices through it,
+never a monthly bill we cannot see. If the file's date is old, or the platform
+is not in it, read its pricing page and update the file.
+
 **Then, what they are like** — `apify/instagram-post-scraper`, about a quarter of
 a cent per post:
 
@@ -292,6 +320,8 @@ now, say so rather than quietly designing around it.
 
 - [ ] the project made with `jt-init`, the locale decided before it
 - [ ] `.jtakeit/instagram.json` and `.jtakeit/instagram-posts.json` hold the raw scrapes
+- [ ] `jt-booking` run on the bio link — `.jtakeit/booking.json` says how they book
+      today, and the portrait's «How they take bookings today» is filled from it
 - [ ] the whole feed was swept, not the last dozen posts — and not more than 200
 - [ ] `jt-photos` run in the same sitting as the scrape — `photos.json`,
       `captions.md` and the contact sheet exist
@@ -316,7 +346,7 @@ Then:
 
 ```bash
 node "$JT/scripts/jt-state.mjs" advance spec --note "portrait from @atelier.nord.zh"
-git add PORTRAIT.md STATUS.md .jtakeit/state.json .jtakeit/photos.json .jtakeit/captions.md src/data/site.ts
+git add PORTRAIT.md STATUS.md .jtakeit/state.json .jtakeit/photos.json .jtakeit/captions.md .jtakeit/booking.json src/data/site.ts
 git commit -m "prospect: @atelier.nord.zh portrait"
 ```
 

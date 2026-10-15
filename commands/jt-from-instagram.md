@@ -44,6 +44,9 @@ friendly sentence they could send (for a private account: the site is built
 from public posts, so there is nothing to build from yet). No project is
 created for a handle that stops here.
 
+Then `jt-booking` (free) on the bio link — how they take bookings today, and
+what they published there themselves. Say it in one line.
+
 ## 2. The portrait
 
 ```bash

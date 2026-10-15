@@ -73,7 +73,9 @@ directions, a private preview for them to comment on, revisions, and the launch.
 
 **Outbound** — you found them. `sourcing` sweeps one trade in one city into a
 sheet of Instagram handles. For one handle, `prospect` reads the profile into a
-portrait where every claim carries its source; `spec` builds a site from it and
+portrait where every claim carries its source — and reads the bio link: which
+booking platform they pay today, and the services, prices and hours they
+published there themselves; `spec` builds a site from it and
 puts it on jtakeit as a private preview; `pitch` records a short video of that
 preview, which you send yourself. If they say yes, the brief confirms everything
 the profile only suggested, and the inbound track takes over.
@@ -119,6 +121,7 @@ scripts/
   jt-init     @jtakeit/astro create, then the pipeline state
   jt-state    read and advance the stage; rewrites STATUS.md
   jt-source   one Instagram sweep → a filtered, marked list
+  jt-booking  the bio link → how they book today, and what they published there
   jt-photos   a scraped feed → measured photographs and a contact sheet
   jt-check    what no platform can check: unconfirmed facts, lifted copy,
               the one query, and whether the page composes
@@ -141,7 +144,9 @@ stays between you and them until they say yes, so the plugin holds to it:
 - the speculative site is a **private preview** on jtakeit — not indexed, reached
   only by a link that expires, and never launched;
 - it states **no fact nobody confirmed**: no address, hours, prices or phone
-  number read off a caption, and `jt-check` fails a page that does;
+  number read off a caption, and `jt-check` fails a page that does. What the
+  business published on its own booking page — services, prices, hours — it
+  may state, exactly as published there, and `jt-check` matches each one;
 - the words are written, not copied — `jt-check` fails a paragraph lifted whole
   from their captions;
 - the pitch says what their site **could look like**, never "here is your new

@@ -71,6 +71,29 @@ const track = state?.track ?? 'inbound';
 const stage = state?.stage ?? 'spec';
 const speculative = has('spec') || (track === 'outbound' && ['prospect', 'spec', 'pitch'].includes(stage));
 
+/** The facts on the business's own booking page, as jt-booking wrote them. */
+function publishedFacts() {
+  const out = { any: false, phones: new Set(), times: new Set(), prices: new Set(), streets: [], postcodes: new Set(), rated: false };
+  let found;
+  try {
+    found = JSON.parse(readFileSync(join(root, '.jtakeit', 'booking.json'), 'utf8'));
+  } catch {
+    return out;
+  }
+  for (const page of found.pages ?? []) {
+    if (!page.structured) continue;
+    out.any = true;
+    const b = page.business ?? {};
+    if (b.phone) out.phones.add(b.phone.replace(/\D/g, '').slice(-9));
+    for (const h of page.hours ?? []) for (const t of [h.opens, h.closes]) if (t) out.times.add(String(t).slice(0, 5).padStart(5, '0'));
+    for (const sv of page.services ?? []) if (sv.price != null) out.prices.add(Number(sv.price));
+    if (b.address?.street) out.streets.push(b.address.street.toLowerCase());
+    if (b.address?.postcode) out.postcodes.add(String(b.address.postcode));
+    if (b.rating) out.rated = true;
+  }
+  return out;
+}
+
 // --- playwright -------------------------------------------------------------
 
 
@@ -162,19 +185,27 @@ if (html) {
    * blocks the stage is a check people learn to skip.
    */
   if (speculative) {
+    // What the business published on its own booking page (jt-booking) is
+    // theirs, not ours: a match the page shares with .jtakeit/booking.json
+    // passes; anything else is still a claim nobody made.
+    const published = publishedFacts();
     const patterns = [
-      ['a phone number', /\+?\d[\d\s\-()]{7,}/],
-      ['an opening time', /\b\d{1,2}[:.]\d{2}\b/],
-      ['a price', /\b\d+\s*(?:грн|₴|uah|usd|eur|chf|\$|€)/i],
-      ['a street address', /(?:вул\.|ул\.|street|str\.|просп|буд\.)\s*\S+|\b\w+(?:strasse|straße|gasse|weg|platz)\s+\d+/i],
-      ['a postcode and town', /\b(?:CH-)?\d{4}\s+(?:Z[üu]rich|Bern|Basel|Gen[eè]ve|Gen[fv]|Lausanne|Luzern|Winterthur|St\.?\s?Gallen|Lugano)\b/i],
-      ['years of experience', /\b\d+\s*(?:рок|рік|год|лет|years|jahre|ans|anni)\w*/i],
-      ['a rating', /★|⭐|\b\d[.,]\d\s*\/\s*5\b/],
+      ['a phone number', /\+?\d[\d\s\-()]{7,}/g, (m) => published.phones.has(m.replace(/\D/g, '').slice(-9))],
+      ['an opening time', /\b\d{1,2}[:.]\d{2}\b/g, (m) => published.times.has(m.replace('.', ':').padStart(5, '0'))],
+      ['a price', /\b\d+\s*(?:грн|₴|uah|usd|eur|chf|\$|€)/gi, (m) => published.prices.has(Number(m.replace(/\D/g, '')))],
+      ['a price', /(?:chf|eur|usd|uah|€|\$)\s*\d+/gi, (m) => published.prices.has(Number(m.replace(/\D/g, '')))],
+      ['a street address', /(?:вул\.|ул\.|street|str\.|просп|буд\.)\s*\S+|(?<![\p{L}])\p{L}+(?:strasse|straße|gasse|weg|platz|quai)\s+\d+/giu, (m) => published.streets.some((st) => st.includes(m.toLowerCase()) || m.toLowerCase().includes(st))],
+      ['a postcode and town', /\b(?:CH-)?\d{4}\s+(?:Z[üu]rich|Bern|Basel|Gen[eè]ve|Gen[fv]|Lausanne|Luzern|Winterthur|St\.?\s?Gallen|Lugano)\b/gi, (m) => published.postcodes.has(m.replace(/\D/g, ''))],
+      ['years of experience', /\b\d+\s*(?:рок|рік|год|лет|years|jahre|ans|anni)\w*/gi, () => false],
+      ['a rating', /★|⭐|\b\d[.,]\d\s*\/\s*5\b/g, () => published.rated],
     ];
-    const found = patterns.filter(([, re]) => re.test(text)).map(([what]) => what);
-    found.length
-      ? fail('unconfirmed facts', `the page states ${found.join(', ')} — nobody confirmed any of it`)
-      : pass('unconfirmed facts', 'no address, hours, prices, phone, experience or ratings');
+    const found = new Set();
+    let shared = 0;
+    for (const [what, re, ok] of patterns)
+      for (const [m] of text.matchAll(re)) ok(m) ? shared++ : found.add(`${what} («${m.trim()}»)`);
+    found.size
+      ? fail('unconfirmed facts', `the page states ${[...found].join(', ')} — nobody confirmed it${published.any ? ', and the booking page does not say it' : ''}`)
+      : pass('unconfirmed facts', shared ? `${shared} fact(s) on the page, each one published on their booking page` : 'no address, hours, prices, phone, experience or ratings');
 
     const numbers = [...new Set(text.match(/\b\d+\b/g) ?? [])];
     if (numbers.length) note('numbers on the page', `${numbers.join(', ')} — check each one is not a claim`);

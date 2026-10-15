@@ -189,6 +189,15 @@ So:
   to say where it came from, which it will not. Design the page so it does not
   need them: a contact section can be the enquiry form and an invitation without
   a printed timetable.
+- **Except what they published themselves.** When the portrait's «Published by
+  them» is filled (`jt-booking` read their booking page), those facts are the
+  business's own, on a page it controls, and the page may state them exactly as
+  written there: the services with their prices and lengths, the hours, the
+  address, the phone. `jt-check` passes each one that matches
+  `.jtakeit/booking.json` and still fails anything else. A rating goes in as
+  words with its source — «5/5 from 189 reviews on Fresha» — never as stars, and
+  never in structured data. Reviews are quoted only by their words, never with
+  the reviewer's name.
 - **Where the structure needs one**, use the shape without the number — «Termine
   nach Vereinbarung» rather than an invented Tuesday-to-Saturday.
 - **No claims of results**, no invented testimonials, no review stars, no client
@@ -204,11 +213,18 @@ So:
   and the price range empty and they stay out of it, and give no page a
   `schema` of its own — no `FAQPage`, no `Service`, no `Offer`. JSON-LD is the
   machine-readable assertion of facts, and we have none to assert.
-- **No booking diary.** A kit (`--kit salon`) lays out services, prices and
-  hours that are the brief's to fill, and a preview's diary takes test
-  bookings. On a spec build there is nothing confirmed to put in it, so the
-  one action is the enquiry form, and the kit is laid out after the brief if
-  the business takes appointments.
+- **No booking diary — unless they publish their services.** A kit (`--kit
+  salon`) lays out services, prices and hours that are the brief's to fill,
+  and a preview's diary takes test bookings. With nothing published, there is
+  nothing confirmed to put in it: the one action is the enquiry form, and the
+  kit is laid out after the brief. When `.jtakeit/booking.json` holds their
+  services with prices and lengths and their hours, ask the developer once
+  whether the spec shows booking on the business's own site: if yes, lay out
+  the kit with exactly those services, those hours and their team's first
+  names, paid **on the spot** (a preview charges nobody, and how they take
+  money is the brief's question). It is the strongest thing the pitch can show
+  a business that pays a platform today — their own booking, on their own
+  page.
 
 What the page *can* say freely is everything the business said about itself, in
 their own words, arranged well. That turns out to be plenty — the reason their

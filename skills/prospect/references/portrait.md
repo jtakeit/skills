@@ -104,9 +104,51 @@ frame it came from.
 | --- | --- | --- |
 | | | |
 
+## How they take bookings today
+
+From `.jtakeit/booking.json` (`jt-booking`), read <date>.
+
+- **How:** <Fresha / Treatwell / Booksy / … · a link hub · a messenger · their own
+  site · nothing in the bio>
+- **The page:** <url>
+- **A marketplace?** <yes — it also sends them new clients · no — a tool only>
+- **Their own site already:** <domain from `also`, and what it is: a card with a
+  link, a real site, a builder's template> · <none>
+
+### Published by them
+
+The business's own booking page says these. The spec may state them, as they
+are written there; `jt-check` passes a fact only when it matches this file.
+
+| Fact | Value |
+| --- | --- |
+| Services | <name — price, length> … |
+| Hours | |
+| Address | |
+| Phone | |
+| Team | <first names> |
+| Rating | <n/5 from N reviews, on <platform>> |
+
+### What it costs them
+
+From [booking-platforms.md](booking-platforms.md), with its date. The rule, and
+one example labelled as one — never their bill: we see their prices, not their
+volume.
+
+- **The platform's rule:** <e.g. Fresha: CHF 18.95/month; 20% of a marketplace
+  new client's first visit, min CHF 5; own link free unless they saw the Fresha
+  profile first>
+- **On their own price list:** <e.g. CHF 8 per new marketplace client on a CHF 40
+  haircut; CHF 5 on the CHF 25 beard trim>
+- **What the platform gives them that a site does not:** <the marketplace's new
+  clients — or nothing, on a tool with no marketplace>
+- **The argument, if there is one:** <«your Instagram clients book on your own
+  page at no commission» · none: the case is the site itself>
+
 ## Claims — ALL UNCONFIRMED
 
 Nothing in this table may be stated as fact by the site. See `jtakeit-sites:spec`.
+A fact that is also in «Published by them» above is not a claim — move it there.
 
 | Claim | Value | Where it came from |
 | --- | --- | --- |
