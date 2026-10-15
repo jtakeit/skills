@@ -46,8 +46,10 @@ What is left is the site's own content and the studio's own care:
 - **The mark.** The business's logo as the icon, or the monogram said back and
   accepted — `preflight` says which it found.
 - **Real photographs** in place of anything off the feed, where they came.
-- **`TODO(prod)` markers** — grep for them and clear every one. The scaffold
-  leaves one at the Search Console tag in `Layout.astro`.
+- **The Search Console tag** — the scaffold leaves it commented out in
+  `Layout.astro` (`google-site-verification`, empty): uncomment it with the
+  property's token once the domain is the site's, or leave it out. And any
+  `TODO(prod)` the project's own work left — grep for them.
 - **The OG image** — the final design, 1200×630, actually rendered. A broken
   card is the first impression on every share.
 - **Redirects**, if there was an old site: every indexed old URL to its
@@ -233,7 +235,7 @@ A short message, in the client's language:
 
 - [ ] `launch.mode` and `client.domain` in the state file
 - [ ] `NEEDS CLIENT` resolved or carried as a named gap
-- [ ] no `TODO(prod)` left; the OG image looked at; old URLs redirect, no loops
+- [ ] the Search Console tag set or left out on purpose; no `TODO(prod)` left; the OG image looked at; old URLs redirect, no loops
 - [ ] `preflight` with `try_booking` says `ready`, before and after the launch
 - [ ] a real enquiry arrived where the client reads them
 - [ ] Lighthouse ≥ 95 desktop / ≥ 90 mobile; the site on a real phone

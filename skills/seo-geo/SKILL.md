@@ -200,7 +200,7 @@ and `preflight` checks that search engines are not told to stay away. What is
 left is a person's, after the launch:
 
 - **Search Console**: the property on the real domain, verified (the scaffold
-  leaves the tag as a `TODO(prod)` in `Layout.astro`), the sitemap submitted,
+  leaves the `google-site-verification` tag commented out in `Layout.astro`), the sitemap submitted,
   the coverage report read a few days later.
 - **Google Business Profile**: exists, matches the site's NAP exactly, links to
   the new address.
