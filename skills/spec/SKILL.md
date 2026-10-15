@@ -230,11 +230,27 @@ What the page *can* say freely is everything the business said about itself, in
 their own words, arranged well. That turns out to be plenty — the reason their
 current situation is bad is usually presentation, not a lack of material.
 
-## Build it, and check it, locally
+## Build it where the developer can watch
+
+**Before a line of the page**, the platform's order (`jtakeit:///guides/start.md`,
+step 2) — not after it:
+
+1. `create_site` with the slug and the name — `atelier-nord`, «Atelier Nord»,
+   `locale` `de-CH`; record its id with
+   `node "$JT/scripts/jt-state.mjs" set site.id <id>`. It is a demo row in the
+   developer's list, nothing public. «That slug is taken» with no id is another
+   account's site (`JTK_E_SLUG_TAKEN`) — choose another.
+2. `npm ci`, and `npm run dev` in the background.
+3. `open_dev_session` on the site with the dev server's address, and run the
+   command its answer gives.
+4. **Give the developer the localhost address** (`http://localhost:4321/`) in
+   one line: the page appears there as you write it, and the corner says where
+   the site is on the platform. A developer who learns of the page only from
+   the preview link has watched nothing for half an hour.
+
+Then write it, and check it:
 
 ```bash
-npm ci
-npm run dev        # the page as you write it
 npm run check
 npx @jtakeit/astro catalogue      # jtk/catalogue.json from blocks.ts, checked against dist/
 
@@ -268,12 +284,8 @@ saved which account the repositories go to — `jt-setup owner` prints it — an
 
 Then, through the jtakeit MCP server:
 
-1. `create_site` with the slug and the name — `atelier-nord`, «Atelier Nord»,
-   `locale` `de-CH`. Record its id: `node "$JT/scripts/jt-state.mjs" set site.id <id>`.
-   It can come first, at the start of the build, if the developer wants
-   `open_dev_session` to show the pages as they are written. «That slug is
-   taken» with no id is another account's site (`JTK_E_SLUG_TAKEN`) — choose
-   another.
+1. The site exists since the build began (`site.id` in the state). If it does
+   not — a project started before this order — `create_site` now.
 2. `validate_catalogue` with `jtk/catalogue.json` and the `jtk/` files — the
    platform's judge, before the push.
 3. The repository, private, under the developer's account or organisation —
@@ -355,6 +367,8 @@ the pitch is the whole page, and those are different jobs.
 
 ## Exit checklist
 
+- [ ] `create_site`, the dev server and `open_dev_session` before the first line,
+      and the localhost address given to the developer
 - [ ] one page, built from the portrait, recognisably theirs
 - [ ] the page sells between the hero and the form — at least two angles chosen
       from the catalogue, each doing a different job, all of them drawn from the

@@ -58,9 +58,22 @@ The slug is the handle made legal: `atelier.nord.zh` → `atelier-nord-zh`. Then
 the posts, `jt-photos` in the same sitting (the media links expire), and
 `PORTRAIT.md`, every claim with its source. Advance to `spec`.
 
-## 3. The site
+## 3. The site, where the developer can watch it
 
-Build one page per `jtakeit-sites:spec`, from the portrait, with
+Before a line of the page, in this order — the platform's own
+(`jtakeit:///guides/start.md`, step 2):
+
+1. `create_site` with the slug and the name; record the id
+   (`jt-state set site.id <id>`). Nothing is public: it is a demo row in the
+   developer's list.
+2. `npm ci`, then `npm run dev` in the background.
+3. `open_dev_session` on the site with the dev server's address, and run the
+   command its answer gives.
+4. **Tell the developer the localhost address** — `http://localhost:4321/` —
+   in one line: the page appears there as it is written, and the corner says
+   where the site is on the platform.
+
+Then build one page per `jtakeit-sites:spec`, from the portrait, with
 `node_modules/@jtakeit/astro/docs/` for construction. It states **no
 unconfirmed fact** — no address, hours, prices or phone number read off a
 caption — and it says "could look like", never "your new website". Build it
@@ -68,8 +81,7 @@ and run `jt-check --dist ./dist --spec` until it has no failures.
 
 ## 4. On jtakeit, privately
 
-`create_site` (record the id: `jt-state set site.id <id>`), then the
-repository: `gh repo create <owner>/<slug> --private --source . --push`. The
+The site exists since step 3. The repository: `gh repo create <owner>/<slug> --private --source . --push`. The
 owner is the one `/jt-setup` saved — `node "${CLAUDE_PLUGIN_ROOT}/scripts/jt-setup.mjs" owner`;
 if none is saved, ask once and save it with `jt-setup owner <name>`. The jtakeit GitHub App has to
 be installed on that owner; for this track, install it once on the whole
