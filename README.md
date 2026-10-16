@@ -123,6 +123,7 @@ scripts/
   jt-state    read and advance the stage; rewrites STATUS.md
   jt-source   one Instagram sweep → a filtered, marked list
   jt-booking  the bio link → how they book today, and what they published there
+  jt-site     their own website → its prices, hours, team, photographs, what is wrong with it
   jt-photos   a scraped feed → measured photographs and a contact sheet
   jt-check    what no platform can check: unconfirmed facts, lifted copy,
               the one query, and whether the page composes

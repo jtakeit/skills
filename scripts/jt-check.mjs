@@ -98,6 +98,20 @@ function publishedFacts() {
     /* no samples: every fact on the page is published or it fails */
   }
 
+  // Their own website, read by jt-site: what it says is published by them.
+  try {
+    const today = JSON.parse(readFileSync(join(root, '.jtakeit', 'site-today.json'), 'utf8'));
+    const f = today.facts ?? {};
+    for (const phone of f.phones ?? []) out.phones.add(String(phone).replace(/\D/g, '').slice(-9));
+    for (const price of f.prices ?? []) out.prices.add(Number(price));
+    for (const time of f.times ?? []) out.times.add(String(time).padStart(5, '0'));
+    for (const street of f.streets ?? []) out.streets.push(String(street).toLowerCase());
+    for (const code of f.postcodes ?? []) out.postcodes.add(String(code));
+    if ((f.phones ?? []).length + (f.prices ?? []).length + (f.times ?? []).length) out.any = true;
+  } catch {
+    /* no site of their own read */
+  }
+
   let found;
   try {
     found = JSON.parse(readFileSync(join(root, '.jtakeit', 'booking.json'), 'utf8'));

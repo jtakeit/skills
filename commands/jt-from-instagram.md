@@ -45,7 +45,9 @@ from public posts, so there is nothing to build from yet). No project is
 created for a handle that stops here.
 
 Then `jt-booking` (free) on the bio link — how they take bookings today, and
-what they published there themselves. Say it in one line.
+what they published there themselves — and `jt-site` on their own website if
+there is one: its price list, hours, team and photographs are theirs, and the
+spec uses them before any sample. Say both in one line each.
 
 ## 2. The portrait
 

@@ -80,6 +80,25 @@ Playwright and read the same fields there — or skip it and say so. A page with
 no structured data still names the platform, which is the half that matters
 for the pitch.
 
+**Then their own website, if they have one** — free, a real browser:
+
+```bash
+node "$JT/scripts/jt-site.mjs"            # the site the bio link or the booking page names
+```
+
+It reads the home page and the pages its menu links to (up to twelve, the
+shop's cart and the legal pages left out) into `.jtakeit/site-today.json`: the
+price list as rows, the hours, phone numbers, the structured data, links to a
+booking platform, and every photograph large enough to use. What their site
+says is **published by them**, like their booking page: `jt-check` passes it on
+the spec page, and nothing that is on it needs to be a sample. Where it links
+to a booking platform — Pall Mall's Fresha, one per branch — run `jt-booking`
+on that link too: the services with their lengths are there.
+
+Their site's photographs are usually the best material they have — larger and
+better lit than the feed. Download the ones the page uses into `src/assets/`
+and say in the portrait which came from where.
+
 Then what that platform costs them — its subscription and its commission, read
 from [references/booking-platforms.md](references/booking-platforms.md) — goes in
 the portrait's «What it costs them»: the rule and their own prices through it,
@@ -320,6 +339,8 @@ now, say so rather than quietly designing around it.
 
 - [ ] the project made with `jt-init`, the locale decided before it
 - [ ] `.jtakeit/instagram.json` and `.jtakeit/instagram-posts.json` hold the raw scrapes
+- [ ] `jt-site` run where they have a site of their own — `.jtakeit/site-today.json`,
+      and the portrait's «Their site today» filled from it
 - [ ] `jt-booking` run on the bio link — `.jtakeit/booking.json` says how they book
       today, and the portrait's «How they take bookings today» is filled from it
 - [ ] the whole feed was swept, not the last dozen posts — and not more than 200

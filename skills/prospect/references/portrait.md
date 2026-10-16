@@ -145,6 +145,17 @@ volume.
 - **The argument, if there is one:** <«your Instagram clients book on your own
   page at no commission» · none: the case is the site itself>
 
+## Their site today
+
+From `.jtakeit/site-today.json` (`jt-site`), read <date>. None if they have none.
+
+- **The address:** <url> · **pages:** <the menu>
+- **What it says:** <the price list, the team, the hours — what we can use as published>
+- **How it takes bookings:** <a platform link, a form, a phone number, nothing>
+- **What is wrong with it**, concretely: <no phone layout · the prices are a PDF ·
+  the booking is three clicks away · the photographs are the 2015 ones> — this is
+  the pitch for a business that already has a site.
+
 ## Claims — ALL UNCONFIRMED
 
 Nothing in this table may be stated as fact by the site. See `jtakeit-sites:spec`.
