@@ -11,9 +11,18 @@ repository `jt-init` made, and put on jtakeit as a **private preview** — a lin
 not an indexed address, and never launched until they say yes.
 
 The scaffold's own documentation is the construction manual for everything
-below: `node_modules/@jtakeit/astro/docs/` once `npm ci` has run — `kit.md`
-first, then `shapes.md`, `photos.md`, `hero-motion.md`, `surface.md`,
-`catalogue.md`, `pages.md`.
+below: `node_modules/@jtakeit/astro/docs/` once `npm ci` has run. It is 190 KB
+— read the part a step needs, not the shelf. The map first:
+
+```bash
+grep -n '^##' node_modules/@jtakeit/astro/docs/*.md
+```
+
+then the sections themselves (`sed -n '<from>,<to>p'`). For a spec, in this
+order: `compositions.md` and `shapes.md` whole (short, and they are the
+design), `gallery.md`'s table, then by question — `photos.md` for the shots,
+`pages.md` and `collections.md` for the pages asked for, `booking.md` where it
+books. Everything read stays in the conversation and slows every step after it.
 
 ## One direction, not three
 
@@ -386,7 +395,13 @@ npm run check
 npx @jtakeit/astro catalogue      # jtk/catalogue.json from blocks.ts, checked against dist/
 
 node "$JT/scripts/jt-check.mjs" --dist ./dist
+node "$JT/scripts/jt-check.mjs" --dist ./dist --again   # after a fix: only what failed
 ```
+
+**Fix in batches.** A run lists every failure: fix all of them, build once,
+`--again`. When those pass, one full run — the gate records nothing else. A
+round per failure is the slowest way through this stage. Edit the files you
+wrote; do not rewrite a stylesheet whole to change three rules.
 
 `npm run check` says the code is sound and says nothing about whether the page
 composes or whether it is honest. `jt-check` is the other half: the facts audit,
@@ -428,8 +443,9 @@ Then, through the jtakeit MCP server:
    ```
 
 4. `attach_repo` with `owner/atelier-nord`. It imports the default branch.
-5. `commit_and_build`, then `get_build` until it settles; `get_build_log` when
-   it does not. A commit moves the branch — `git pull` before your next one.
+5. `commit_and_build` — **once, after the critic's list is fixed** (below), not
+   per fix — then `get_build` until it settles; `get_build_log` when it does
+   not. A commit moves the branch — `git pull` before your next one.
 6. `get_built_page` with `shot: "phone"` — look at it: the fold, an empty
    block, a cut line, a placeholder frame, the form. This is the page the video
    will record.
@@ -449,21 +465,28 @@ If they say no, a person archives the site in the panel (Sites → the row's men
 → Archive), which takes it off the internet and revokes its links.
 
 Later changes are the ordinary loop: `git pull`, commit, `import_branch`,
-`commit_and_build`, look again.
+`commit_and_build`, look again. On a site that already exists — built before,
+edited in the panel since — `git pull` **before the first edit**, not before
+the push: a panel revision merged at the end is a conflict in every content
+file you touched.
 
 ## The critic, before anybody else looks
 
 `jt-check` measures; it cannot see that a page is dull, that a hero does not
-decide what it is, or that two sections say the same thing. Before the review
-gate, and after every round of fixes that changed the layout, hand the page to
-the **site critic** — the plugin's agent `jtakeit-sites:site-critic`, through
-the Agent tool, with the project's directory. It did not build the page and
+decide what it is, or that two sections say the same thing. As soon as
+`jt-check` first passes — on the local build, before the first
+`commit_and_build` — hand the page to the **site critic**: the plugin's agent
+`jtakeit-sites:site-critic`, through the Agent tool, in the background, with
+the project's directory. While it looks, do the steps that build nothing
+(`validate_catalogue`, the repository, `attach_repo`). It did not build the page and
 reads no code: it shoots every page section by section at a laptop and a phone
 (`jt-shots`) and returns an ordered list of what is broken, what is weak and
 what is not theirs, each with a concrete fix.
 
-Fix the list — all of it, or say to the developer which items you left and
-why — rebuild, `jt-check` again, and only then the review gate. Never show the
+Fix the list in one pass — all of it, or say to the developer which items you
+left and why — then `jt-check` (`--again`, then once in full), then the one
+`commit_and_build`, and only then the review gate. Once is the rule: call the
+critic again only when a fix rebuilt a section's layout from scratch. Never show the
 developer a page the critic has not seen.
 
 ## The review gate

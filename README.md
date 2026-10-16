@@ -126,7 +126,8 @@ scripts/
   jt-site     their own website → its prices, hours, team, photographs, what is wrong with it
   jt-photos   a scraped feed → measured photographs and a contact sheet
   jt-check    what no platform can check: unconfirmed facts, lifted copy,
-              the one query, and whether the page composes
+              the one query, and whether the page composes — every page, in
+              seconds; --again repeats only what failed
   jt-pitch    record the pitch video, phone and desktop
   jt-clips    cut a video into short silent loops
   jt-shots    every page, section by section, at a laptop and a phone

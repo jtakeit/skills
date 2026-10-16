@@ -88,8 +88,15 @@ const chromium = await loadChromium(die);
 const browser = await chromium.launch();
 const manifest = [];
 
-for (const page of PAGES) {
-  for (const [w, h, tag] of [[1440, 780, 'laptop'], [393, 720, 'phone']]) {
+// Four pages at a time: a page and a size each, its pictures in its own
+// directory, the manifest put back in order at the end.
+const views = PAGES.flatMap((page) => [[page, 1440, 780, 'laptop'], [page, 393, 720, 'phone']]);
+let next = 0;
+const shoot = async () => {
+  while (next < views.length) {
+    const [page, w, h, tag] = views[next++];
+    const shots = [];
+    manifest.push(shots);
     const p = await browser.newPage({ viewport: { width: w, height: h } });
     try {
       await p.goto(new URL(page.replace(/^\//, ''), url).href, { waitUntil: 'networkidle', timeout: 60_000 });
@@ -100,11 +107,21 @@ for (const page of PAGES) {
     await p.addStyleTag({ content: 'jtk-writing, astro-dev-toolbar { display: none !important; }' });
     await p.evaluate(async () => {
       document.documentElement.style.scrollBehavior = 'auto';
-      for (let y = 0; y < document.body.scrollHeight; y += innerHeight / 2) {
+      for (const img of document.images) if (img.loading === 'lazy') img.loading = 'eager';
+      for (let y = 0; y < document.body.scrollHeight; y += innerHeight * 0.8) {
         scrollTo(0, y);
-        await new Promise((r) => setTimeout(r, 60));
+        await new Promise((r) => setTimeout(r, 50));
       }
       scrollTo(0, 0);
+      await Promise.all(
+        [...document.images]
+          .filter((img) => !img.complete)
+          .map((img) => new Promise((r) => {
+            img.addEventListener('load', r, { once: true });
+            img.addEventListener('error', r, { once: true });
+            setTimeout(r, 4000);
+          })),
+      );
       document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('is-in'));
     });
     await p.waitForTimeout(900);
@@ -114,7 +131,7 @@ for (const page of PAGES) {
     // The first screen, as a visitor lands on it.
     const fold = join(dir, `${tag}-00-first-screen.png`);
     await p.screenshot({ path: fold });
-    manifest.push({ page, width: w, section: 'first screen', file: fold });
+    shots.push({ page, width: w, section: 'first screen', file: fold });
     // Then every section of <main>, the header and the footer, one picture each.
     const parts = await p.$$('body > header, main > *, body > footer, footer');
     let n = 0;
@@ -125,11 +142,15 @@ for (const page of PAGES) {
       const name = await el.evaluate((e) => (e.querySelector('h1, h2, h3')?.textContent || e.tagName).trim().slice(0, 40).replace(/[^\w]+/g, '-').toLowerCase());
       const file = join(dir, `${tag}-${String(n).padStart(2, '0')}-${name || 'section'}.png`);
       await el.screenshot({ path: file });
-      manifest.push({ page, width: w, section: name, file });
+      shots.push({ page, width: w, section: name, file });
     }
     await p.close();
   }
-}
+};
+await Promise.all(Array.from({ length: 4 }, shoot));
+const flat = manifest.flat();
+manifest.length = 0;
+manifest.push(...flat);
 
 await browser.close();
 server?.close();

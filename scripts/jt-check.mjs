@@ -24,6 +24,11 @@
  *   jt-check --dist ./dist            # serves the build itself
  *   jt-check --url http://localhost:4321
  *   jt-check --spec                   # hold it to the speculative rules
+ *   jt-check --again                  # only the sections that failed last time
+ *
+ * `--again` is for the loop between fixes: seconds instead of a full run. It
+ * records nothing for the gate — `jt-state advance` wants a full run that
+ * passed — so the last run before handing on is always the whole check.
  *
  * Exit code is the number of failures, capped at 100. Zero means it is worth a
  * human's attention.
@@ -31,6 +36,7 @@
  * Needs the playwright package, which lives in scripts/.deps alongside jt-pitch.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -54,10 +60,23 @@ function die(message) {
   process.exit(1);
 }
 
+/*
+ * The checks run side by side — one at a time they took 85 seconds on a
+ * seven-page site, and a build loop ran them fifteen times (Schorem, 16
+ * October 2026). A section's results go into its own list, through the async
+ * context it runs in, and the report prints the lists in the order the
+ * sections are written, so running them at once changes nothing on the page.
+ */
 const results = [];
-const pass = (name, detail = '') => results.push({ ok: true, name, detail });
-const fail = (name, detail) => results.push({ ok: false, name, detail });
-const note = (name, detail) => results.push({ ok: null, name, detail });
+const scope = new AsyncLocalStorage();
+const push = (r) => (scope.getStore() ?? results).push(r);
+const pass = (name, detail = '') => push({ ok: true, name, detail });
+const fail = (name, detail) => push({ ok: false, name, detail });
+const note = (name, detail) => push({ ok: null, name, detail });
+
+/** A browser check, run later beside the others. */
+const SECTIONS = [];
+const section = (name, run) => SECTIONS.push({ name, run });
 
 // --- what kind of build is this --------------------------------------------
 //
@@ -479,24 +498,72 @@ async function settle(page) {
   await page.evaluate(async () => {
     const doc = document.documentElement;
     doc.style.scrollBehavior = 'auto';
-    const step = window.innerHeight * 0.5;
+    // Most of a screen at a step: every block still passes through the
+    // viewport, which is all an observer needs to fire.
+    const step = window.innerHeight * 0.8;
     for (let y = 0; y < document.body.scrollHeight; y += step) {
       window.scrollTo(0, y);
-      await new Promise((r) => setTimeout(r, 90));
+      await new Promise((r) => setTimeout(r, 50));
     }
     window.scrollTo(0, 0);
+    // The pictures the walk asked for, arrived: a lazy photograph still on
+    // its way has no height, and a bleed band measured without it reads as
+    // words in one corner of an empty band.
+    // One the walk never reached — a slide of a gallery that scrolls
+    // sideways — would hold this to its timeout, so all of them are asked for.
+    for (const img of document.images) if (img.loading === 'lazy') img.loading = 'eager';
+    await Promise.all(
+      [...document.images]
+        .filter((img) => !img.complete)
+        .map((img) => new Promise((r) => {
+          img.addEventListener('load', r, { once: true });
+          img.addEventListener('error', r, { once: true });
+          setTimeout(r, 4000);
+        })),
+    );
     await (document.fonts?.ready ?? Promise.resolve());
     doc.style.scrollBehavior = '';
   });
   await page.waitForTimeout(350);
 }
 
-async function open(width, height) {
-  const page = await browser.newPage({ viewport: { width, height } });
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 });
-  await settle(page);
-  return page;
+/*
+ * Pages open at most SLOTS at a time, across every section: more than that and
+ * the machine, not the page, decides whether an entrance has landed.
+ */
+const SLOTS = Number(flag('slots', 6));
+let free = SLOTS;
+const waiting = [];
+const acquire = () => (free > 0 ? (free--, Promise.resolve()) : new Promise((r) => waiting.push(r)));
+const release = () => (waiting.length ? waiting.shift()() : free++);
+
+/** A page of the build at a size, walked and settled; closing it frees its slot. */
+async function open(width, height, path = '') {
+  await acquire();
+  let page;
+  try {
+    page = await browser.newPage({ viewport: { width, height } });
+    const close = page.close.bind(page);
+    let closed = false;
+    page.close = async () => {
+      if (!closed) {
+        closed = true;
+        release();
+      }
+      return close();
+    };
+    await page.goto(new URL(path.replace(/^\//, ''), url).href, { waitUntil: 'networkidle', timeout: 60_000 });
+    await settle(page);
+    return page;
+  } catch (e) {
+    if (page) await page.close();
+    else release();
+    throw e;
+  }
 }
+
+/** Each of `items` through `run`, as many at once as the slots allow. */
+const each = (items, run) => Promise.all(items.map(run));
 
 // -- the first screen --------------------------------------------------------
 //
@@ -512,27 +579,31 @@ const FOLD = [
   [393, 720],
 ];
 
-const foldProblems = [];
-let sawCta = false;
+section('first screen', async () => {
+  const foldProblems = [];
+  let sawCta = false;
 
-for (const [w, h] of FOLD) {
-  const page = await open(w, h);
-  const m = await page.evaluate(() => {
-    // The first thing in <main>, whatever tag it is. A hero wrapped in
-    // <HeroField> is a div, not a section — reading the first *section* there
-    // silently measures the band under the hero instead, which reports a fold
-    // that fits as one that overflows and a moving hero as a still one.
-    const hero = document.querySelector('main > *');
-    if (!hero) return null;
-    const cta = hero.querySelector('.btn, a[href^="#"], button');
-    return {
-      vh: window.innerHeight,
-      hero: Math.round(hero.getBoundingClientRect().bottom),
-      cta: cta ? Math.round(cta.getBoundingClientRect().bottom) : null,
-      wide: document.documentElement.scrollWidth > window.innerWidth + 1,
-    };
-  });
-  await page.close();
+  const measured = await each(FOLD, async ([w, h]) => {
+    const page = await open(w, h);
+    const m = await page.evaluate(() => {
+      // The first thing in <main>, whatever tag it is. A hero wrapped in
+      // <HeroField> is a div, not a section — reading the first *section* there
+      // silently measures the band under the hero instead, which reports a fold
+      // that fits as one that overflows and a moving hero as a still one.
+      const hero = document.querySelector('main > *');
+      if (!hero) return null;
+      const cta = hero.querySelector('.btn, a[href^="#"], button');
+      return {
+        vh: window.innerHeight,
+        hero: Math.round(hero.getBoundingClientRect().bottom),
+        cta: cta ? Math.round(cta.getBoundingClientRect().bottom) : null,
+        wide: document.documentElement.scrollWidth > window.innerWidth + 1,
+      };
+    });
+    await page.close();
+    return [w, h, m];
+});
+for (const [w, h, m] of measured) {
   if (!m) {
     foldProblems.push('no <section> inside <main> — cannot tell where the hero is');
     continue;
@@ -549,6 +620,7 @@ foldProblems.length
   ? fail('first screen', foldProblems.join('; '))
   : pass('first screen', `hero${sawCta ? ' and the one action' : ''} inside the fold at 1440×780, 1280×680 and 393×720 — browser windows, not screens`);
 if (!sawCta) note('first screen', 'no button or in-page link found in the hero — is there a call to action?');
+});
 
 // -- every page ---------------------------------------------------------------
 //
@@ -590,66 +662,66 @@ const fileOf = (page) => {
 };
 
 // The header: the same links on every page, each to a place of its own.
-if (!flag('url') && existsSync(dist)) {
-  const menus = new Map();
-  for (const page of PAGES) {
-    const file = fileOf(page);
-    if (!file) continue;
-    const html = readFileSync(file, 'utf8');
-    const header = /<header[\s\S]*?<\/header>/i.exec(html)?.[0] ?? '';
-    const links = [...header.matchAll(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)].map(([, href, inner]) => ({
-      href,
-      label: inner.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
-    }));
-    menus.set(page, links);
-  }
-  const labels = (links) => links.map((l) => l.label.toLowerCase()).filter(Boolean).sort().join(' · ');
-  const home = menus.get('/') ?? [...menus.values()][0] ?? [];
-  const drift = [...menus.entries()].filter(([, links]) => labels(links) !== labels(home)).map(([page, links]) => {
-    const missing = home.filter((h) => !links.some((l) => l.label.toLowerCase() === h.label.toLowerCase())).map((h) => h.label);
-    return `${page}${missing.length ? ` lacks ${missing.join(', ')}` : ' differs'}`;
-  });
-  if (!menus.size) note('header', 'no pages found in the build to compare');
-  else if (!home.length) fail('header', 'no <header> with links on the home page — a site needs its name and its sections at the top of every page');
-  else if (drift.length) fail('header', `the header is not the same on every page: ${drift.slice(0, 4).join('; ')} — an anchor that only exists on the home page is a link to /#…, not a link that disappears`);
-  else pass('header', `the same ${home.length} links on all ${menus.size} pages`);
+section('header', async () => {
+  if (!flag('url') && existsSync(dist)) {
+    const menus = new Map();
+    for (const page of PAGES) {
+      const file = fileOf(page);
+      if (!file) continue;
+      const html = readFileSync(file, 'utf8');
+      const header = /<header[\s\S]*?<\/header>/i.exec(html)?.[0] ?? '';
+      const links = [...header.matchAll(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)].map(([, href, inner]) => ({
+        href,
+        label: inner.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
+      }));
+      menus.set(page, links);
+    }
+    const labels = (links) => links.map((l) => l.label.toLowerCase()).filter(Boolean).sort().join(' · ');
+    const home = menus.get('/') ?? [...menus.values()][0] ?? [];
+    const drift = [...menus.entries()].filter(([, links]) => labels(links) !== labels(home)).map(([page, links]) => {
+      const missing = home.filter((h) => !links.some((l) => l.label.toLowerCase() === h.label.toLowerCase())).map((h) => h.label);
+      return `${page}${missing.length ? ` lacks ${missing.join(', ')}` : ' differs'}`;
+    });
+    if (!menus.size) note('header', 'no pages found in the build to compare');
+    else if (!home.length) fail('header', 'no <header> with links on the home page — a site needs its name and its sections at the top of every page');
+    else if (drift.length) fail('header', `the header is not the same on every page: ${drift.slice(0, 4).join('; ')} — an anchor that only exists on the home page is a link to /#…, not a link that disappears`);
+    else pass('header', `the same ${home.length} links on all ${menus.size} pages`);
 
-  // Each item to a place of its own, and a place that exists.
-  const shared = [];
-  const dead = [];
-  const byTarget = new Map();
-  for (const { href, label } of home) {
-    if (!label || /^(mailto|tel|https?):/.test(href)) continue;
-    const target = href.replace(/\/$/, '') || '/';
-    byTarget.set(target, [...(byTarget.get(target) ?? []), label]);
-    const [path, hash] = href.split('#');
-    const file = path ? fileOf(path) : fileOf('/');
-    if (path && path !== '/' && (!file || file === join(dist, 'index.html'))) dead.push(`${label} → ${href}`);
-    else if (hash && file && !new RegExp(`id="${hash}"`).test(readFileSync(file, 'utf8'))) dead.push(`${label} → ${href} (no #${hash} there)`);
+    // Each item to a place of its own, and a place that exists.
+    const shared = [];
+    const dead = [];
+    const byTarget = new Map();
+    for (const { href, label } of home) {
+      if (!label || /^(mailto|tel|https?):/.test(href)) continue;
+      const target = href.replace(/\/$/, '') || '/';
+      byTarget.set(target, [...(byTarget.get(target) ?? []), label]);
+      const [path, hash] = href.split('#');
+      const file = path ? fileOf(path) : fileOf('/');
+      if (path && path !== '/' && (!file || file === join(dist, 'index.html'))) dead.push(`${label} → ${href}`);
+      else if (hash && file && !new RegExp(`id="${hash}"`).test(readFileSync(file, 'utf8'))) dead.push(`${label} → ${href} (no #${hash} there)`);
+    }
+    for (const [target, names] of byTarget) if (names.length > 1) shared.push(`${names.join(' and ')} → ${target}`);
+    if (dead.length) fail('menu targets', `${dead.slice(0, 4).join('; ')} — leads nowhere`);
+    else if (shared.length) fail('menu targets', `${shared.slice(0, 3).join('; ')} — two items, one place: give each its own page or its own section (prices to /prices, booking to /prices#book)`);
+    else pass('menu targets', 'every header link leads to a place of its own that exists');
   }
-  for (const [target, names] of byTarget) if (names.length > 1) shared.push(`${names.join(' and ')} → ${target}`);
-  if (dead.length) fail('menu targets', `${dead.slice(0, 4).join('; ')} — leads nowhere`);
-  else if (shared.length) fail('menu targets', `${shared.slice(0, 3).join('; ')} — two items, one place: give each its own page or its own section (prices to /prices, booking to /prices#book)`);
-  else pass('menu targets', 'every header link leads to a place of its own that exists');
-}
+});
 
 // Every page, at a laptop and a phone: text off the edge, empty boxes, and two
 // sections built the same way one after the other.
-{
+section('every page', async () => {
   const edges = [];
   const empties = [];
   const twins = [];
   const tight = [];
-  for (const page of PAGES) {
-    for (const [w, h] of [[1440, 900], [393, 852]]) {
-      const p = await browser.newPage({ viewport: { width: w, height: h } });
+  const views = PAGES.flatMap((page) => [[page, 1440, 900], [page, 393, 852]]);
+  const measured = await each(views, async ([page, w, h]) => {
+      let p;
       try {
-        await p.goto(new URL(page.replace(/^\//, ''), url).href, { waitUntil: 'networkidle', timeout: 60_000 });
+        p = await open(w, h, page);
       } catch {
-        await p.close();
-        continue;
+        return null;
       }
-      await settle(p);
       // Everything revealed, so a block still waiting for its entrance is
       // measured where it will be, not as an empty band.
       await p.evaluate(() => document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('is-in')));
@@ -752,12 +824,14 @@ if (!flag('url') && existsSync(dist)) {
         return { edge, empty, twin, framed };
       });
       await p.close();
+      return [page, w, m];
+  });
+  for (const [page, w, m] of measured.filter(Boolean)) {
       const where = `${page} at ${w}`;
       if (m.edge.length) edges.push(`${where}: ${m.edge.join(', ')}`);
       if (m.empty.length) empties.push(`${where}: ${m.empty.join(', ')}`);
       if (m.framed.length) tight.push(`${where}: ${m.framed.join(', ')}`);
       if (w === 1440 && m.twin.length) twins.push(`${page}: ${m.twin.join('; ')}`);
-    }
   }
   edges.length
     ? fail('text at the edge', `${edges.slice(0, 3).join(' · ')} — text needs the page's side margin (16px and up), and a table or list inside a block keeps the block's padding`)
@@ -771,17 +845,15 @@ if (!flag('url') && existsSync(dist)) {
   twins.length
     ? fail('repeated layout', `${twins.slice(0, 3).join(' · ')} — two sections in a row built the same way; change the second's composition (docs/compositions.md)`)
     : pass('repeated layout', 'no two neighbouring sections built alike');
-}
+});
 
 // -- orphans -----------------------------------------------------------------
 //
 // One item alone on the last line of a wrapping row. Swept, because it appears
 // at widths nobody thinks to open and moves when the copy changes.
 
-{
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 60_000 });
-  await settle(page);
+section('orphans', async () => {
+  const page = await open(1440, 900);
 
   const rows = await page.evaluate(() => document.querySelectorAll('[data-row]').length);
   if (!rows) {
@@ -809,11 +881,11 @@ if (!flag('url') && existsSync(dist)) {
       : pass('orphans', `${rows} row(s) clean from 320 to 1600px`);
   }
   if (!page.isClosed()) await page.close();
-}
+});
 
 // -- in-page links -----------------------------------------------------------
 
-{
+section('in-page links', async () => {
   const page = await open(1280, 800);
   const smooth = await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior);
   const targets = await page.evaluate(() =>
@@ -855,11 +927,11 @@ if (!flag('url') && existsSync(dist)) {
       : pass('in-page links', `${new Set(targets).size} anchor(s) scroll smoothly onto their heading`);
   }
   if (!page.isClosed()) await page.close();
-}
+});
 
 // -- photographs and the form ------------------------------------------------
 
-{
+section('photographs', async () => {
   const page = await open(1280, 900);
   const m = await page.evaluate(() => {
     const placeholders = document.querySelectorAll('.shot--placeholder').length;
@@ -951,7 +1023,7 @@ if (!flag('url') && existsSync(dist)) {
       ? pass('autofill', 'the form keeps its palette when the browser fills it')
       : fail('autofill', 'no :-webkit-autofill rule — a filled form will turn white');
   }
-}
+});
 
 // -- the surface -------------------------------------------------------------
 //
@@ -970,237 +1042,246 @@ if (!flag('url') && existsSync(dist)) {
 // monitors; the contrast between the figure and the paper under it is a number.
 
 let surfaceShape = null;
+let surfaceMeasured;
+const surfaceReady = new Promise((r) => (surfaceMeasured = r));
 
-{
-  const page = await open(1440, 900);
-  // The walk in settle() starts the last block's entrance; it does not wait for
-  // it to land. Measuring a transition that is still running reports a block
-  // that arrived as a block that never did.
-  await page.waitForTimeout(1200);
-  const surface = await page.evaluate(() => {
-    const luminance = (rgb) => {
-      const [r, g, b] = rgb.map((v) => {
-        const c = v / 255;
-        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-      });
-      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    };
-    const parse = (value) => {
-      const m = /rgba?\(([^)]+)\)/.exec(value || '');
-      if (!m) return null;
-      const parts = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
-      return parts.length >= 3 ? { rgb: parts.slice(0, 3), a: parts.length > 3 ? parts[3] : 1 } : null;
-    };
-    const over = (top, bottom, alpha) => top.map((c, i) => c * alpha + bottom[i] * (1 - alpha));
-    const ratio = (a, b) => {
-      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-      return (hi + 0.05) / (lo + 0.05);
-    };
+section('surface', async () => {
+  try {
+    const page = await open(1440, 900);
+    // The walk in settle() starts the last block's entrance; it does not wait for
+    // it to land. Measuring a transition that is still running reports a block
+    // that arrived as a block that never did.
+    await page.waitForTimeout(1200);
+    const surface = await page.evaluate(() => {
+      const luminance = (rgb) => {
+        const [r, g, b] = rgb.map((v) => {
+          const c = v / 255;
+          return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const parse = (value) => {
+        const m = /rgba?\(([^)]+)\)/.exec(value || '');
+        if (!m) return null;
+        const parts = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        return parts.length >= 3 ? { rgb: parts.slice(0, 3), a: parts.length > 3 ? parts[3] : 1 } : null;
+      };
+      const over = (top, bottom, alpha) => top.map((c, i) => c * alpha + bottom[i] * (1 - alpha));
+      const ratio = (a, b) => {
+        const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+        return (hi + 0.05) / (lo + 0.05);
+      };
 
-    const hidden = (el) => {
-      const cs = getComputedStyle(el);
-      return Number(cs.opacity) < 0.99 || /inset\(.*100%/.test(cs.clipPath);
-    };
+      const hidden = (el) => {
+        const cs = getComputedStyle(el);
+        return Number(cs.opacity) < 0.99 || /inset\(.*100%/.test(cs.clipPath);
+      };
+
+      /*
+       * What moves forever, counted as *regions* rather than as elements.
+       *
+       * A wall of photographs is three drifting columns and one decision; a hero
+       * of five looping clips is five <video> elements and one decision. Counting
+       * elements made both of them look like a page out of control, which is the
+       * check crying wolf at exactly the components that were built carefully.
+       *
+       * So a component that owns continuous motion marks its root
+       * `data-motion="<name>"`, and everything animating inside it is that one
+       * region. Anything moving forever with no such ancestor is its own region,
+       * which is what catches the unconsidered case this check exists for.
+       *
+       * A looping autoplaying video counts. It is not a CSS animation and it is
+       * unarguably something that moves while somebody is reading the page.
+       */
+      const cssForever = [...document.querySelectorAll('*')]
+        .flatMap((el) => [
+          [el, getComputedStyle(el)],
+          [el, getComputedStyle(el, '::after')],
+          [el, getComputedStyle(el, '::before')],
+        ])
+        .filter(([, cs]) => cs.animationName !== 'none' && /infinite/.test(cs.animationIterationCount))
+        .map(([el]) => el);
+
+      const videoForever = [...document.querySelectorAll('video[autoplay][loop]')];
+
+      const interactive = (el) =>
+        el.matches('a[href], button, [role="button"], input, select, textarea, summary') ||
+        Boolean(el.closest('a[href], button'));
+
+      const regions = new Map();
+      for (const el of [...cssForever, ...videoForever]) {
+        const owner = el.closest('[data-motion]');
+        const key = owner
+          ? owner.dataset.motion
+          : `${el.tagName.toLowerCase()}${el.className ? `.${String(el.className).split(' ')[0]}` : ''}`;
+        if (!regions.has(key)) regions.set(key, { declared: Boolean(owner), pressable: interactive(owner ?? el) });
+      }
+
+      const reveals = [...document.querySelectorAll('[data-reveal]')].filter(
+        (el) => el.dataset.reveal !== 'none',
+      );
+
+      // A stagger hides its children rather than itself, so both are looked at.
+      //
+      // Hidden *and* never marked. `.is-in` is the observer's own record that the
+      // block reached the screen: without it a block that is invisible is a block
+      // nothing ever turned on, which is the fault. With it, an invisible block is
+      // one whose entrance is still running, and that is not a fault.
+      const stuck = reveals
+        .filter((el) => !el.classList.contains('is-in'))
+        .filter((el) => hidden(el) || [...el.children].some((child) => hidden(child)))
+        .map((el) => el.dataset.reveal || 'rise');
+
+      const layer = document.querySelector('.pattern__stencil, .pattern__drawing');
+      let ground = null;
+      if (layer) {
+        const cs = getComputedStyle(layer);
+        const ink = parse(cs.backgroundColor)?.a ? parse(cs.backgroundColor) : parse(getComputedStyle(layer.parentElement).color);
+        const paper = parse(getComputedStyle(document.body).backgroundColor);
+        const alpha = Number(cs.opacity) * (ink?.a ?? 1);
+        ground = ink && paper
+          ? {
+              pattern: layer.parentElement.dataset.pattern,
+              opacity: Number(alpha.toFixed(3)),
+              contrast: Number(ratio(over(ink.rgb, paper.rgb, alpha), paper.rgb).toFixed(2)),
+            }
+          : { pattern: layer.parentElement.dataset.pattern, opacity: Number(alpha.toFixed(3)), contrast: null };
+      }
+
+      // How the photographs are printed. `recede` is not a look — it is a
+      // photograph pushed back so copy can sit on it — so it is counted apart
+      // from the one treatment the page is allowed to have.
+      const treatments = [...new Set(
+        [...document.querySelectorAll('[data-treatment]')].map((el) => el.dataset.treatment),
+      )];
+
+      const galleries = [...new Set(
+        [...document.querySelectorAll('[data-arrangement]')].map((el) => el.dataset.arrangement),
+      )];
+
+      return {
+        ground,
+        stuck,
+        treatments,
+        galleries,
+        looks: treatments.filter((t) => t !== 'recede' && t !== 'none'),
+        shots: document.querySelectorAll('.shot').length,
+        kinds: [...new Set(reveals.map((el) => el.dataset.reveal || 'rise'))],
+        edges: [...new Set([...document.querySelectorAll('[data-edge]')].map((el) => el.dataset.edge))],
+        forever: [...regions.keys()],
+        // An edge that performs belongs to something a visitor can press. A wall
+        // of photographs is not pressable and does not need to be: it is exempt
+        // by declaring itself, which is a decision somebody wrote down.
+        performing: [...regions.entries()].filter(([, r]) => !r.declared && !r.pressable).map(([k]) => k),
+      };
+    });
+    await page.close();
+
+    // A reveal inside the first screen. Measured on the two viewports where it
+    // costs the most: the laptop everybody builds on, and the phone.
+    const early = [];
+    const views = await each([[1440, 900], [393, 852]], async ([w, h]) => {
+      const view = await open(w, h);
+      const found = await view.evaluate(() =>
+        [...document.querySelectorAll('[data-reveal]')]
+          .filter((el) => el.dataset.reveal !== 'none')
+          .filter((el) => el.getBoundingClientRect().top < window.innerHeight - 8)
+          .map((el) => `${el.tagName.toLowerCase()}${el.className ? `.${String(el.className).split(' ')[0]}` : ''}`),
+      );
+      await view.close();
+      return [w, h, found];
+    });
+    for (const [w, h, found] of views) {
+      // Named once each: five identical selectors is the same fault printed five
+      // times, and a long line is a line nobody finishes reading.
+      const named = [...new Set(found)];
+      if (found.length)
+        early.push(
+          `${w}×${h}: ${named.slice(0, 4).join(', ')}${named.length > 4 ? ` +${named.length - 4} more` : ''}` +
+            `${found.length > named.length ? ` (${found.length} elements)` : ''}`,
+        );
+    }
+
+    surfaceShape = surface;
+
+    if (surface.stuck.length)
+      fail(
+        'reveals fire',
+        `${surface.stuck.length} block(s) are still hidden after the page has been scrolled through ` +
+          `(${[...new Set(surface.stuck)].join(', ')}) — that is content nobody can read. The observer ` +
+          'in Layout.astro is what adds .is-in.',
+      );
+    else if (surface.kinds.length) pass('reveals fire', `${surface.kinds.join(', ')} — every block arrives`);
+
+    if (early.length)
+      fail(
+        'the first screen is not revealed',
+        `${early.join(' · ')} — an entrance above the fold delays the largest paint and shows an empty ` +
+          'page on a slow line. Reveal what is scrolled to, never what is landed on.',
+      );
+
+    if (surface.kinds.length >= 3)
+      fail(
+        'one entrance',
+        `${surface.kinds.join(', ')} — three kinds of entrance on one page is a component gallery. Pick the one this page's material asks for.`,
+      );
+    else if (surface.kinds.length === 2)
+      note('one entrance', `${surface.kinds.join(' + ')} — two is defensible if the second is on the photographs; three is not`);
 
     /*
-     * What moves forever, counted as *regions* rather than as elements.
-     *
-     * A wall of photographs is three drifting columns and one decision; a hero
-     * of five looping clips is five <video> elements and one decision. Counting
-     * elements made both of them look like a page out of control, which is the
-     * check crying wolf at exactly the components that were built carefully.
-     *
-     * So a component that owns continuous motion marks its root
-     * `data-motion="<name>"`, and everything animating inside it is that one
-     * region. Anything moving forever with no such ancestor is its own region,
-     * which is what catches the unconsidered case this check exists for.
-     *
-     * A looping autoplaying video counts. It is not a CSS animation and it is
-     * unarguably something that moves while somebody is reading the page.
+     * Two regions is the argument, three is the answer. A hero that moves and a
+     * wall of work that drifts is a page most people would defend; a third thing
+     * moving forever is a page nobody chose.
      */
-    const cssForever = [...document.querySelectorAll('*')]
-      .flatMap((el) => [
-        [el, getComputedStyle(el)],
-        [el, getComputedStyle(el, '::after')],
-        [el, getComputedStyle(el, '::before')],
-      ])
-      .filter(([, cs]) => cs.animationName !== 'none' && /infinite/.test(cs.animationIterationCount))
-      .map(([el]) => el);
-
-    const videoForever = [...document.querySelectorAll('video[autoplay][loop]')];
-
-    const interactive = (el) =>
-      el.matches('a[href], button, [role="button"], input, select, textarea, summary') ||
-      Boolean(el.closest('a[href], button'));
-
-    const regions = new Map();
-    for (const el of [...cssForever, ...videoForever]) {
-      const owner = el.closest('[data-motion]');
-      const key = owner
-        ? owner.dataset.motion
-        : `${el.tagName.toLowerCase()}${el.className ? `.${String(el.className).split(' ')[0]}` : ''}`;
-      if (!regions.has(key)) regions.set(key, { declared: Boolean(owner), pressable: interactive(owner ?? el) });
-    }
-
-    const reveals = [...document.querySelectorAll('[data-reveal]')].filter(
-      (el) => el.dataset.reveal !== 'none',
-    );
-
-    // A stagger hides its children rather than itself, so both are looked at.
-    //
-    // Hidden *and* never marked. `.is-in` is the observer's own record that the
-    // block reached the screen: without it a block that is invisible is a block
-    // nothing ever turned on, which is the fault. With it, an invisible block is
-    // one whose entrance is still running, and that is not a fault.
-    const stuck = reveals
-      .filter((el) => !el.classList.contains('is-in'))
-      .filter((el) => hidden(el) || [...el.children].some((child) => hidden(child)))
-      .map((el) => el.dataset.reveal || 'rise');
-
-    const layer = document.querySelector('.pattern__stencil, .pattern__drawing');
-    let ground = null;
-    if (layer) {
-      const cs = getComputedStyle(layer);
-      const ink = parse(cs.backgroundColor)?.a ? parse(cs.backgroundColor) : parse(getComputedStyle(layer.parentElement).color);
-      const paper = parse(getComputedStyle(document.body).backgroundColor);
-      const alpha = Number(cs.opacity) * (ink?.a ?? 1);
-      ground = ink && paper
-        ? {
-            pattern: layer.parentElement.dataset.pattern,
-            opacity: Number(alpha.toFixed(3)),
-            contrast: Number(ratio(over(ink.rgb, paper.rgb, alpha), paper.rgb).toFixed(2)),
-          }
-        : { pattern: layer.parentElement.dataset.pattern, opacity: Number(alpha.toFixed(3)), contrast: null };
-    }
-
-    // How the photographs are printed. `recede` is not a look — it is a
-    // photograph pushed back so copy can sit on it — so it is counted apart
-    // from the one treatment the page is allowed to have.
-    const treatments = [...new Set(
-      [...document.querySelectorAll('[data-treatment]')].map((el) => el.dataset.treatment),
-    )];
-
-    const galleries = [...new Set(
-      [...document.querySelectorAll('[data-arrangement]')].map((el) => el.dataset.arrangement),
-    )];
-
-    return {
-      ground,
-      stuck,
-      treatments,
-      galleries,
-      looks: treatments.filter((t) => t !== 'recede' && t !== 'none'),
-      shots: document.querySelectorAll('.shot').length,
-      kinds: [...new Set(reveals.map((el) => el.dataset.reveal || 'rise'))],
-      edges: [...new Set([...document.querySelectorAll('[data-edge]')].map((el) => el.dataset.edge))],
-      forever: [...regions.keys()],
-      // An edge that performs belongs to something a visitor can press. A wall
-      // of photographs is not pressable and does not need to be: it is exempt
-      // by declaring itself, which is a decision somebody wrote down.
-      performing: [...regions.entries()].filter(([, r]) => !r.declared && !r.pressable).map(([k]) => k),
-    };
-  });
-  await page.close();
-
-  // A reveal inside the first screen. Measured on the two viewports where it
-  // costs the most: the laptop everybody builds on, and the phone.
-  const early = [];
-  for (const [w, h] of [[1440, 900], [393, 852]]) {
-    const view = await open(w, h);
-    const found = await view.evaluate(() =>
-      [...document.querySelectorAll('[data-reveal]')]
-        .filter((el) => el.dataset.reveal !== 'none')
-        .filter((el) => el.getBoundingClientRect().top < window.innerHeight - 8)
-        .map((el) => `${el.tagName.toLowerCase()}${el.className ? `.${String(el.className).split(' ')[0]}` : ''}`),
-    );
-    await view.close();
-    // Named once each: five identical selectors is the same fault printed five
-    // times, and a long line is a line nobody finishes reading.
-    const named = [...new Set(found)];
-    if (found.length)
-      early.push(
-        `${w}×${h}: ${named.slice(0, 4).join(', ')}${named.length > 4 ? ` +${named.length - 4} more` : ''}` +
-          `${found.length > named.length ? ` (${found.length} elements)` : ''}`,
+    if (surface.forever.length > 2)
+      fail(
+        'what moves forever',
+        `${surface.forever.join(', ')} — three regions moving at once is a demo. The hero is usually one of them; ` +
+          'everything else that never stops is furniture asking to be looked at.',
       );
+    else if (surface.forever.length === 2)
+      note('what moves forever', `${surface.forever.join(' + ')} — two is defensible, and it is the ceiling`);
+    else if (surface.forever.length) pass('what moves forever', surface.forever[0]);
+
+    if (surface.performing.length)
+      fail(
+        'moving things are declared',
+        `${surface.performing.join(', ')} moves forever without being pressable and without declaring itself. ` +
+          'An animated edge belongs to the one thing a visitor is meant to press; a surface that moves on ' +
+          'purpose marks its root data-motion="<name>" and says in a comment what buys the exception.',
+      );
+
+    /*
+     * One treatment per site.
+     *
+     * The whole point of a treatment is that photographs shot in different lights
+     * on different phones become one set. Two looks on one page is the fault the
+     * treatment was there to fix, arrived at from the other direction — and it is
+     * the shape a page takes when each section was styled on the day it was
+     * written rather than decided once.
+     */
+    if (surface.looks.length > 1)
+      fail(
+        'one treatment',
+        `${surface.looks.join(', ')} — a page printed two ways is the disagreement a treatment exists to remove. ` +
+          'Pick the one this material asks for (photos.md); `recede` alongside it is fine, it is not a look.',
+      );
+    else if (surface.looks.length)
+      pass('one treatment', `${surface.looks[0]} on ${surface.shots} photograph(s)`);
+
+    if (surface.ground?.contrast !== null && surface.ground) {
+      const { pattern, opacity, contrast } = surface.ground;
+      contrast > 1.6
+        ? fail(
+            'the ground is quiet',
+            `${pattern} sits at ${contrast}:1 against the paper (opacity ${opacity}) — a ground is read at a glance and never read at. Under 1.6:1.`,
+          )
+        : pass('the ground is quiet', `${pattern} at ${contrast}:1 against the paper`);
+    }
+  } finally {
+    surfaceMeasured();
   }
-
-  surfaceShape = surface;
-
-  if (surface.stuck.length)
-    fail(
-      'reveals fire',
-      `${surface.stuck.length} block(s) are still hidden after the page has been scrolled through ` +
-        `(${[...new Set(surface.stuck)].join(', ')}) — that is content nobody can read. The observer ` +
-        'in Layout.astro is what adds .is-in.',
-    );
-  else if (surface.kinds.length) pass('reveals fire', `${surface.kinds.join(', ')} — every block arrives`);
-
-  if (early.length)
-    fail(
-      'the first screen is not revealed',
-      `${early.join(' · ')} — an entrance above the fold delays the largest paint and shows an empty ` +
-        'page on a slow line. Reveal what is scrolled to, never what is landed on.',
-    );
-
-  if (surface.kinds.length >= 3)
-    fail(
-      'one entrance',
-      `${surface.kinds.join(', ')} — three kinds of entrance on one page is a component gallery. Pick the one this page's material asks for.`,
-    );
-  else if (surface.kinds.length === 2)
-    note('one entrance', `${surface.kinds.join(' + ')} — two is defensible if the second is on the photographs; three is not`);
-
-  /*
-   * Two regions is the argument, three is the answer. A hero that moves and a
-   * wall of work that drifts is a page most people would defend; a third thing
-   * moving forever is a page nobody chose.
-   */
-  if (surface.forever.length > 2)
-    fail(
-      'what moves forever',
-      `${surface.forever.join(', ')} — three regions moving at once is a demo. The hero is usually one of them; ` +
-        'everything else that never stops is furniture asking to be looked at.',
-    );
-  else if (surface.forever.length === 2)
-    note('what moves forever', `${surface.forever.join(' + ')} — two is defensible, and it is the ceiling`);
-  else if (surface.forever.length) pass('what moves forever', surface.forever[0]);
-
-  if (surface.performing.length)
-    fail(
-      'moving things are declared',
-      `${surface.performing.join(', ')} moves forever without being pressable and without declaring itself. ` +
-        'An animated edge belongs to the one thing a visitor is meant to press; a surface that moves on ' +
-        'purpose marks its root data-motion="<name>" and says in a comment what buys the exception.',
-    );
-
-  /*
-   * One treatment per site.
-   *
-   * The whole point of a treatment is that photographs shot in different lights
-   * on different phones become one set. Two looks on one page is the fault the
-   * treatment was there to fix, arrived at from the other direction — and it is
-   * the shape a page takes when each section was styled on the day it was
-   * written rather than decided once.
-   */
-  if (surface.looks.length > 1)
-    fail(
-      'one treatment',
-      `${surface.looks.join(', ')} — a page printed two ways is the disagreement a treatment exists to remove. ` +
-        'Pick the one this material asks for (photos.md); `recede` alongside it is fine, it is not a look.',
-    );
-  else if (surface.looks.length)
-    pass('one treatment', `${surface.looks[0]} on ${surface.shots} photograph(s)`);
-
-  if (surface.ground?.contrast !== null && surface.ground) {
-    const { pattern, opacity, contrast } = surface.ground;
-    contrast > 1.6
-      ? fail(
-          'the ground is quiet',
-          `${pattern} sits at ${contrast}:1 against the paper (opacity ${opacity}) — a ground is read at a glance and never read at. Under 1.6:1.`,
-        )
-      : pass('the ground is quiet', `${pattern} at ${contrast}:1 against the paper`);
-  }
-}
+});
 
 // -- the shape of this build --------------------------------------------------
 //
@@ -1235,7 +1316,10 @@ const blockSequence = (() => {
   }
 })();
 
-{
+section('shape', async () => {
+  // The fingerprint names the surface, which its own section measures —
+  // waited for before taking a slot, or one slot would wait for itself.
+  await surfaceReady;
   const page = await open(1440, 900);
   const shape = await page.evaluate(() => {
     const sections = [...document.querySelectorAll('main > section')];
@@ -1372,7 +1456,7 @@ const blockSequence = (() => {
         'utf8',
       );
   }
-}
+});
 
 // -- the other end: a 27-inch monitor ----------------------------------------
 //
@@ -1388,7 +1472,7 @@ const blockSequence = (() => {
 // because a design may legitimately cap its headline and the two together are
 // what tell the story.
 
-{
+section('wide screen', async () => {
   const reach = async (width, height) => {
     const page = await open(width, height);
     const m = await page.evaluate(() => {
@@ -1422,8 +1506,7 @@ const blockSequence = (() => {
     return m;
   };
 
-  const laptop = await reach(1440, 900);
-  const monitor = await reach(2560, 1440);
+  const [laptop, monitor] = await Promise.all([reach(1440, 900), reach(2560, 1440)]);
 
   if (!laptop || !monitor) {
     note('wide screen', 'nothing paints inside the first <section> — cannot measure how it uses a large screen');
@@ -1447,7 +1530,7 @@ const blockSequence = (() => {
         `the headline is ${Math.round(monitor.heading)}px on both a laptop and a 27-inch monitor — clamp() with a vw term, capped`,
       );
   }
-}
+});
 
 // -- empty space, band by band ------------------------------------------------
 //
@@ -1465,7 +1548,7 @@ const blockSequence = (() => {
 //              of prose — a long FAQ reads as a document — and wrong for a form,
 //              which is a thing to be filled in rather than read.
 
-{
+section('empty space', async () => {
   const page = await open(1920, 1080);
   const bands = await page.evaluate(() => {
     const paints = (el) => {
@@ -1550,7 +1633,7 @@ const blockSequence = (() => {
         `${thin.map((b) => `${b.name} ${Math.round(b.onScreen * 100)}%`).join(', ')} — narrow columns, deliberate or not?`,
       );
   }
-}
+});
 
 // -- the hero with JavaScript off --------------------------------------------
 //
@@ -1561,7 +1644,7 @@ const blockSequence = (() => {
 // heading that is empty, or a hero with no button in it, is somebody else's
 // check, and reporting it here would only teach people to skip this one.
 
-{
+section('without javascript', async () => {
   const measure = () => {
     const hero = document.querySelector('main > *');
     if (!hero) return null;
@@ -1637,7 +1720,29 @@ const blockSequence = (() => {
       ? note('hero motion', `${scripted.canvas} moving ground in the hero — check its colours are theirs`)
       : note('hero motion', 'the hero does not move — deliberate, or was HeroField forgotten again?');
   }
-}
+});
+
+// --- run them ----------------------------------------------------------------
+//
+// All at once, the pages they open bounded by SLOTS. With --again, only the
+// sections that failed on the last run — the rest are taken as they were.
+
+const before = state?.checks?.sections ?? null;
+const again = has('again');
+if (again && !before) die('--again needs a full run before it — run jt-check without it once');
+const chosen = again ? SECTIONS.filter((s) => before[s.name]?.length) : SECTIONS;
+const outcome = await Promise.all(
+  chosen.map(({ name, run }) => {
+    const own = [];
+    return scope
+      .run(own, run)
+      .catch((e) => own.push({ ok: false, name, detail: `the check itself broke: ${String(e?.message ?? e).split('\n')[0]}` }))
+      .then(() => [name, own]);
+  }),
+);
+for (const [, own] of outcome) results.push(...own);
+// What each section failed, for the next --again.
+const sections = Object.fromEntries(outcome.map(([name, own]) => [name, own.filter((r) => r.ok === false).map((r) => r.name)]));
 
 await browser.close();
 if (server) server.close();
@@ -1648,7 +1753,9 @@ console.log(`\nCheck · ${url}${speculative ? '  (spec build)' : ''}`);
 // Which project this is. Printed because the commonest way to get a confusing
 // result out of any jt-* script is to run it from the wrong directory.
 console.log(`Project · ${root}\n`);
-for (const r of results) {
+// --again prints what still fails and nothing else: the passes were read on
+// the full run, and every line printed is a line the agent carries after it.
+for (const r of again ? results.filter((x) => x.ok === false) : results) {
   const mark = r.ok === true ? '✓' : r.ok === false ? '✗' : '·';
   console.log(`  ${mark} ${r.name.padEnd(20)} ${r.detail}`);
 }
@@ -1659,7 +1766,12 @@ const notes = results.filter((r) => r.ok === null);
 // Recorded, so the stage cannot be left without it: `jt-state advance` out of a
 // building stage reads this, and refuses a check that failed or that was run
 // on a commit other than the one being handed on.
-if (state) {
+if (state && again) {
+  // What is still failing, for the next --again; the gate's record stays the
+  // last full run's.
+  state.checks.sections = { ...before, ...sections };
+  writeState(root, state);
+} else if (state) {
   let head = '';
   try {
     head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
@@ -1673,12 +1785,21 @@ if (state) {
     ok: failures.length === 0,
     failed: failures.map((f) => f.name),
     pages: PAGES.length,
+    sections,
   };
   writeState(root, state);
 }
 console.log('');
-if (failures.length) {
-  console.log(`${failures.length} failure(s). Fix these before asking anybody to look at the page.`);
+if (again) {
+  const rerun = chosen.map((s) => s.name);
+  console.log(`--again: ${rerun.length ? rerun.join(', ') : 'nothing failed last time'} — the rest as the last full run left it.`);
+  console.log(
+    failures.length
+      ? `${failures.length} failure(s) still. Fix them all, then --again.`
+      : 'Those pass now. Run jt-check once more without --again: the gate takes a full run.',
+  );
+} else if (failures.length) {
+  console.log(`${failures.length} failure(s). Fix them all before running it again — \`--again\` re-runs only what failed.`);
 } else {
   console.log(`Passed${notes.length ? ` with ${notes.length} thing(s) to look at` : ''}.`);
   console.log('');

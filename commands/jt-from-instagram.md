@@ -49,6 +49,12 @@ what they published there themselves — and `jt-site` on their own website if
 there is one: its price list, hours, team and photographs are theirs, and the
 spec uses them before any sample. Say both in one line each.
 
+**At the same time, not one after another.** The header says who they are, so
+`jt-init` (step 2) can run now; then start together — `npm ci` in the
+background, the posts scrape, `jt-booking`, `jt-site` — and read each as it
+lands. A long feed takes Apify a minute or two; the install and the two reads
+fit inside it.
+
 ## 2. The portrait
 
 ```bash
@@ -81,7 +87,13 @@ work, a journal — recommending from what the portrait found
 `node_modules/@jtakeit/astro/docs/` for construction. It states **no
 unconfirmed fact** — no address, hours, prices or phone number read off a
 caption — and it says "could look like", never "your new website". Build it
-and run `jt-check --dist ./dist --spec` until it has no failures.
+and run `jt-check --dist ./dist --spec`.
+
+**Fix in batches, not one at a time.** A run lists every failure; fix all of
+them, build once, and run `jt-check --dist ./dist --spec --again` — it repeats
+only the sections that failed, in seconds. When those pass, one full run
+without `--again`: the gate takes nothing else. One failure per round is how a
+build spent forty minutes in this loop.
 
 ## 4. On jtakeit, privately
 
@@ -92,13 +104,17 @@ be installed on that owner; for this track, install it once on the whole
 account (all repositories) so no demo waits on a person — if `attach_repo`
 refuses with the App's link, that is the step, and it is theirs.
 
-Then `attach_repo`, `commit_and_build`, `get_build` until it settles
-(`get_build_log` if not), and `get_built_page` with `shot: "phone"` — look at
-it before anybody else does.
+**The critic first, on localhost.** As soon as `jt-check` passes, start the
+site critic (`jtakeit-sites:site-critic`, through the Agent tool, in the
+background) on the local build. While it looks: `validate_catalogue`, the
+repository, `attach_repo` — none of it builds. When its list comes back, fix
+all of it in one pass, then `jt-check` again (`--again`, then once in full).
 
-Then the site critic (`jtakeit-sites:site-critic`, through the Agent tool):
-fix its list, rebuild, `jt-check` again. The link goes nowhere until both have
-passed.
+**Then one build.** `commit_and_build`, `get_build` until it settles
+(`get_build_log` if not), and `get_built_page` with `shot: "phone"` — look at
+it before anybody else does. Not a build per fix: each one is a commit the
+panel's next revision has to merge with, and minutes of waiting. The link goes
+nowhere until `jt-check` and the critic have both passed.
 
 Where the page shows booking: `preflight` with `try_booking` must pass before
 the link goes anywhere — it books and cancels through the page's own form. A

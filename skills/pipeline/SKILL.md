@@ -288,3 +288,7 @@ wrote, not only the home page: the first screen in real browser windows
 item to a place of its own, text off the edges and off the frames it sits in,
 no empty boxes, no two neighbouring sections built alike. A person can
 override with `--unchecked "<why>"`; the reason is logged. An agent does not.
+
+A full run takes seconds, not minutes; between fixes `--again` repeats only the
+sections that failed and records nothing for the gate. Fix every failure of a
+run before the next one.
