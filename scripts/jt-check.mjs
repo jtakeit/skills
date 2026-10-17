@@ -714,6 +714,9 @@ section('every page', async () => {
   const empties = [];
   const twins = [];
   const tight = [];
+  const soft = [];
+  const foreign = [];
+  const underlined = [];
   const views = PAGES.flatMap((page) => [[page, 1440, 900], [page, 393, 852]]);
   const measured = await each(views, async ([page, w, h]) => {
       let p;
@@ -821,7 +824,55 @@ section('every page', async () => {
           const b = shapes[i];
           if (a.columns >= 2 && a.columns === b.columns && a.side === b.side && a.side !== 'none') twin.push(`«${a.name}» and «${b.name}»`);
         }
-        return { edge, empty, twin, framed };
+        // Photographs drawn bigger than they are. A frame cut out of a reel
+        // is 720 px wide; stretched across a 1440 hero it is the softest
+        // thing on the page, and the first thing seen (lewiscoiff, 17 October
+        // 2026). Measured as the file's pixels against the pixels it covers,
+        // with object-fit: cover's crop counted in.
+        const blurry = [...document.querySelectorAll('main img')]
+          .filter((img) => visible(img) && img.naturalWidth > 0)
+          .map((img) => {
+            const r = img.getBoundingClientRect();
+            if (r.width < 480) return null;
+            const fit = getComputedStyle(img).objectFit;
+            const scale = fit === 'cover' ? Math.max(r.width / img.naturalWidth, r.height / img.naturalHeight) : r.width / img.naturalWidth;
+            return scale > 1.35 ? `${(img.currentSrc || img.src).split('/').pop().split('?')[0].slice(0, 40)} (${img.naturalWidth}px drawn ${Math.round(r.width)}px wide)` : null;
+          })
+          .filter(Boolean)
+          .slice(0, 3);
+
+        // A block in a language the page is not in: a caption pasted in the
+        // language it was posted in, on a German page (lewiscoiff).
+        const STOP = {
+          en: ['the', 'and', 'is', 'are', 'of', 'to', 'with', 'for', 'it', 'that', 'this', 'you', 'your', 'about', 'just', 'not', 'a', 'every', 'what'],
+          de: ['der', 'die', 'das', 'und', 'ist', 'nicht', 'mit', 'für', 'ein', 'eine', 'sie', 'ihr', 'auf', 'den', 'dem', 'zu', 'auch', 'wie', 'es'],
+          fr: ['le', 'la', 'les', 'et', 'est', 'des', 'une', 'pour', 'avec', 'pas', 'vous', 'que', 'qui', 'dans', 'du', 'sur', 'nous', 'au'],
+          it: ['il', 'la', 'le', 'e', 'è', 'di', 'che', 'per', 'con', 'non', 'una', 'gli', 'del', 'della', 'sono', 'ti', 'al', 'nel'],
+          nl: ['de', 'het', 'een', 'en', 'is', 'van', 'voor', 'met', 'niet', 'je', 'wij', 'ons', 'op', 'dat', 'die', 'zijn', 'ook', 'bij'],
+          es: ['el', 'la', 'los', 'las', 'y', 'es', 'de', 'que', 'para', 'con', 'una', 'no', 'por', 'tu', 'del', 'en', 'su', 'más'],
+        };
+        const pageLang = (document.documentElement.lang || '').slice(0, 2).toLowerCase();
+        const offLang = [];
+        if (STOP[pageLang]) {
+          for (const el of document.querySelectorAll('main p, main h1, main h2, main h3, main blockquote, main li, main figcaption')) {
+            if (!visible(el) || el.querySelector('p, h1, h2, h3, li')) continue;
+            const words = (el.textContent || '').toLowerCase().match(/[\p{L}']+/gu) ?? [];
+            if (words.length < 6) continue;
+            const hits = Object.fromEntries(Object.entries(STOP).map(([l, list]) => [l, words.filter((w) => list.includes(w)).length]));
+            const [best, second] = Object.entries(hits).sort((a, b) => b[1] - a[1]);
+            if (best[0] !== pageLang && best[1] >= 3 && best[1] >= 2 * Math.max(second[1], hits[pageLang])) offLang.push(`${best[0]}: «${(el.textContent || '').trim().slice(0, 50)}…»`);
+            if (offLang.length >= 2) break;
+          }
+        }
+
+        // A button whose words are underlined: an <a class="btn"> keeps the
+        // browser's link underline unless something takes it off.
+        const lined = [...document.querySelectorAll('main .btn, header .btn, main [class*="button"], header [class*="button"]')]
+          .filter((el) => visible(el) && getComputedStyle(el).textDecorationLine.includes('underline'))
+          .slice(0, 2)
+          .map((el) => `«${(el.textContent || '').trim().slice(0, 24)}»`);
+
+        return { edge, empty, twin, framed, blurry, offLang, lined };
       });
       await p.close();
       return [page, w, m];
@@ -831,6 +882,9 @@ section('every page', async () => {
       if (m.edge.length) edges.push(`${where}: ${m.edge.join(', ')}`);
       if (m.empty.length) empties.push(`${where}: ${m.empty.join(', ')}`);
       if (m.framed.length) tight.push(`${where}: ${m.framed.join(', ')}`);
+      if (w === 1440 && m.blurry.length) soft.push(`${page}: ${m.blurry.join(', ')}`);
+      if (w === 1440 && m.offLang.length) foreign.push(`${page}: ${m.offLang.join(' · ')}`);
+      if (w === 1440 && m.lined.length) underlined.push(`${page}: ${m.lined.join(', ')}`);
       if (w === 1440 && m.twin.length) twins.push(`${page}: ${m.twin.join('; ')}`);
   }
   edges.length
@@ -845,6 +899,43 @@ section('every page', async () => {
   twins.length
     ? fail('repeated layout', `${twins.slice(0, 3).join(' · ')} — two sections in a row built the same way; change the second's composition (docs/compositions.md)`)
     : pass('repeated layout', 'no two neighbouring sections built alike');
+  soft.length
+    ? fail('sharp photographs', `${soft.slice(0, 3).join(' · ')} — drawn a third or more bigger than the file is. A frame cut from a reel is 720 px: never a full-width band or a hero. Use the reel itself as a loop (jt-clips), a sharper photograph, or a hero of type and motion`)
+    : pass('sharp photographs', 'no photograph drawn bigger than its file');
+  foreign.length
+    ? fail('one language', `${foreign.slice(0, 3).join(' · ')} — a block in another language than the page's. Their words, said in the page's language`)
+    : pass('one language', 'every block in the page\'s language');
+  if (underlined.length)
+    fail('buttons', `${underlined.slice(0, 3).join(' · ')} — a button's words underlined, the link default left on: text-decoration: none on .btn`);
+});
+
+// -- a gallery in one window --------------------------------------------------
+//
+// A gallery a visitor plays with is a picture and its controls: the arrows of a
+// deck, the thumbnails of a stage. Widened past what a laptop shows, the
+// picture fills the window and the controls are under the fold (lewiscoiff's
+// deck at 34rem, 17 October 2026).
+
+section('gallery fits', async () => {
+  const found = await each(PAGES, async (page) => {
+    let p;
+    try {
+      p = await open(1440, 780, page);
+    } catch {
+      return [];
+    }
+    const tall = await p.evaluate(() =>
+      [...document.querySelectorAll('[data-arrangement]')]
+        .filter((el) => !['wall', 'strip', 'ragged', 'contact', 'sphere'].includes(el.dataset.arrangement))
+        .map((el) => ({ kind: el.dataset.arrangement, h: Math.round(el.getBoundingClientRect().height) }))
+        .filter((g) => g.h > window.innerHeight - 24),
+    );
+    await p.close();
+    return tall.map((g) => `${page} ${g.kind} ${g.h}px`);
+  });
+  const tall = found.flat();
+  if (!tall.length) return;
+  fail('gallery fits', `${tall.slice(0, 3).join(' · ')} in a 1440×780 window — a gallery and its controls are seen together. Size it by the window's height, not by the column`);
 });
 
 // -- orphans -----------------------------------------------------------------
@@ -1426,6 +1517,54 @@ section('shape', async () => {
 
     if (shape.sections >= 5 && shape.fullBleed === shape.sections)
       note('shape', 'every section is a full-bleed band — that is the form all three of our last builds took (shapes.md)');
+
+    /*
+     * The last builds, across projects. A fingerprint inside one project
+     * cannot see that the third spec in a row chose the deck again
+     * (lewiscoiff after 8001 Barber and Schorem, 17 October 2026), so the
+     * spec builds of this machine are kept in one list, beside /jt-setup's
+     * config, and the work's gallery may not repeat the last two.
+     */
+    if (speculative && !again) {
+      const home = join(process.env.XDG_CONFIG_HOME || join(process.env.HOME || '', '.config'), 'jtakeit-sites');
+      const file = join(home, 'history.json');
+      let history = [];
+      try {
+        history = JSON.parse(readFileSync(file, 'utf8'));
+      } catch {
+        // The first time: the projects beside this one, by their own
+        // fingerprints, oldest first — the builds this machine already made.
+        try {
+          const parent = dirname(root);
+          history = readdirSync(parent)
+            .map((name) => join(parent, name, '.jtakeit', 'fingerprint.json'))
+            .filter((f) => existsSync(f))
+            .map((f) => {
+              const fp = JSON.parse(readFileSync(f, 'utf8'));
+              const at = dirname(dirname(f));
+              return { root: at, name: at.split('/').pop(), at: fp.measuredAt ?? '', gallery: (fp.surface?.galleries ?? []).join(' '), hero: fp.heroAnatomy ?? '' };
+            })
+            .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+        } catch {
+          /* nothing beside it */
+        }
+      }
+      const here = root;
+      const others = history.filter((h) => h.root !== here).slice(-2);
+      const gallery = (surfaceShape?.galleries ?? []).join(' ');
+      if (gallery && others.length === 2 && others.every((h) => h.gallery === gallery))
+        fail('not the last builds again', `the work is a ${gallery} gallery, as in ${others.map((h) => h.name).join(' and ')} — choose the arrangement from this business's material (docs/gallery.md), not from habit`);
+      else if (gallery) pass('not the last builds again', `${gallery}, after ${others.map((h) => `${h.name}: ${h.gallery || 'none'}`).join(', ') || 'no earlier build'}`);
+      if (others.length === 2 && others.every((h) => h.hero === shape.heroAnatomy))
+        note('not the last builds again', `the hero is ${shape.heroAnatomy} for the third build running`);
+      try {
+        mkdirSync(home, { recursive: true });
+        const mine = { root: here, name: state?.client?.slug ?? here.split('/').pop(), at: new Date().toISOString(), gallery, hero: shape.heroAnatomy, edges: (surfaceShape?.edges ?? []).join(' ') };
+        writeFileSync(file, `${JSON.stringify([...history.filter((h) => h.root !== here), mine].slice(-20), null, 2)}\n`);
+      } catch {
+        /* a history nobody can write is a check that has nothing to compare */
+      }
+    }
 
     if (existsSync(join(root, STATE_DIR)))
       writeFileSync(
