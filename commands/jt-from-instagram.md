@@ -77,7 +77,11 @@ Before a line of the page, in this order — the platform's own
 2. `npm ci`, then `npm run dev` in the background.
 3. `open_dev_session` on the site with the dev server's address, and run the
    command its answer gives.
-4. **Tell the developer the localhost address** — `http://localhost:4321/` —
+4. `BRIEF.md` filled from the portrait (`jtakeit-sites:spec` → *Build it where
+   the developer can watch*, step 4) — the card on localhost reads it, and
+   stays on «1. Brief» for the whole build while it is the empty skeleton. If
+   the card says «the session is closed», `open_dev_session` again.
+5. **Tell the developer the localhost address** — `http://localhost:4321/` —
    in one line: the page appears there as it is written, and the corner says
    where the site is on the platform.
 

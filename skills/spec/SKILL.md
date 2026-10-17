@@ -405,8 +405,24 @@ step 2) — not after it:
    account's site (`JTK_E_SLUG_TAKEN`) — choose another.
 2. `npm ci`, and `npm run dev` in the background.
 3. `open_dev_session` on the site with the dev server's address, and run the
-   command its answer gives.
-4. **Give the developer the localhost address** (`http://localhost:4321/`) in
+   command its answer gives. A session ends after two hours with no page open
+   on it; if the card on localhost says «the session is closed», open a new
+   one and run its command again — the developer's card is blind until you do.
+4. **Fill `BRIEF.md` from the portrait.** On this track the portrait is the
+   brief, but the scaffold's `BRIEF.md` is what the localhost card and the
+   panel read — left as the empty skeleton, both say «1. Brief — collecting
+   the brief» for the whole build, and every phase after it waits. Keep its
+   headings; write under them:
+   - *In one sentence* and *The one action* — from the portrait;
+   - *Facts* — the published ones only, as table rows with their source
+     (their booking page, their own site): name, address, phone, hours;
+   - *Bookings* — the kit, and where its zone and hours came from;
+   - *Decisions* — the pages (`design.pages`), the shape (`design.*`), the
+     benchmarks, and each sample declared in `.jtakeit/sample.json`;
+   - *Open — NEEDS CLIENT* — empty: a spec asks the business nothing, and the
+     samples are already under Decisions;
+   - *Done when* — this stage's exit checklist, ticked as it passes.
+5. **Give the developer the localhost address** (`http://localhost:4321/`) in
    one line: the page appears there as you write it, and the corner says where
    the site is on the platform. A developer who learns of the page only from
    the preview link has watched nothing for half an hour.
@@ -588,6 +604,8 @@ the pitch is the whole page, and those are different jobs.
       written for that one query — carried by sentences, not by repetition
 - [ ] the hero moves, in their colours — or it does not and the reason is
       written down, not forgotten
+- [ ] `BRIEF.md` filled from the portrait — Facts with sources, Decisions,
+      nothing under Open — so the localhost card and the panel move past «Brief»
 - [ ] two or three benchmarks chosen and looked at (`jt-refs`), the moves taken
       recorded in `design.benchmarks` — moves, not looks
 - [ ] the shape chosen from the catalogues and recorded in `design.*` — and not
