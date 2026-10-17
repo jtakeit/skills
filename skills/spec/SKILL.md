@@ -215,12 +215,26 @@ away. **Show the work at the volume they have**: twelve to forty pieces where
 material — `docs/gallery.md` has twelve, six of them things a visitor plays
 with (`deck`, `coverflow`, `focus`, `stage`, `morph`, `sphere`). Run
 `/jt-showroom` and choose with the developer: it shows every one of them on
-this business's own photographs.
+this business's own photographs. **Not the arrangement of the last builds**:
+`jt-check` keeps this machine's spec builds and fails a third one in a row with
+the same gallery — choose from this material, not from habit.
+
+**Size it by the window, not by the column.** A gallery and its controls are
+seen together in a 1440×780 window — a deck widened to fill its column puts its
+arrows under the fold (`jt-check` → *gallery fits*).
 
 The pictures are the business's own published work. Prefer the frames where
 the work is the subject — the cut from the side and the back, the nails, the
 plate — and keep a customer's full face out of the hero; inside a gallery of
 work they published, it is theirs to show.
+
+**A frame cut from a reel is a thumbnail, never a band.** Stills out of video
+(`jt-photos --frames`) are 720 px wide; stretched across a 1440 hero or a bleed
+band they are the softest thing on the page and the first thing seen
+(lewiscoiff, 17 October 2026). `jt-check` fails any photograph drawn a third
+bigger than its file. Where the feed is reels, the hero is the reel itself as a
+loop (`jt-clips`), or type and motion (`HeroField`) with the work below it at
+the size it has — never a still blown up.
 
 ## Moments, not only a hero
 
@@ -295,9 +309,12 @@ field goes quiet where the picture lands, or the picture stands alone.
 **No ground unless the developer asks for one.** A pattern under the whole page
 (`surface.pattern`) is off by default: on a page carrying the business's own
 photographs it competes with them, and on a dark palette it does not read at
-all. Leave `surface.pattern` empty. The edge and the entrance are still yours
-to choose (`docs/surface.md`); the ground is the developer's to ask for, and
-`/jt-showroom` is where they see the six.
+all. Leave `surface.pattern` empty. **The same for the edge**: `none`, with the
+kit's soft radius, unless the developer asks — a notch or crop marks on a
+business's photographs read as a mistake nobody can explain (lewiscoiff's cut
+corners, 17 October 2026). The entrance is yours to choose (`docs/surface.md`);
+the ground and the edge are the developer's to ask for, and `/jt-showroom` is
+where they see them.
 
 ## When the material is missing: a sample, declared
 
@@ -436,6 +453,12 @@ npx @jtakeit/astro catalogue      # jtk/catalogue.json from blocks.ts, checked a
 node "$JT/scripts/jt-check.mjs" --dist ./dist
 node "$JT/scripts/jt-check.mjs" --dist ./dist --again   # after a fix: only what failed
 ```
+
+**A new collection needs the dev server restarted.** The scaffold's entry
+loader reads `jtk/content/<collection>/` once, when `npm run dev` starts: a
+price list or a team written after that is empty on localhost until a restart
+(`npx astro dev stop`, then `npm run dev` again), though the build has it —
+lewiscoiff's `/services` showed no prices and no form for the whole session.
 
 **Fix in batches.** A run lists every failure: fix all of them, build once,
 `--again`. When those pass, one full run — the gate records nothing else. A
@@ -604,6 +627,10 @@ the pitch is the whole page, and those are different jobs.
       written for that one query — carried by sentences, not by repetition
 - [ ] the hero moves, in their colours — or it does not and the reason is
       written down, not forgotten
+- [ ] the whole site in its language — a caption in another language said in
+      the page's, not pasted (`jt-check` → *one language*)
+- [ ] no photograph drawn bigger than its file; no reel frame as a hero or band
+- [ ] the edge `none` and no ground, unless the developer asked
 - [ ] `BRIEF.md` filled from the portrait — Facts with sources, Decisions,
       nothing under Open — so the localhost card and the panel move past «Brief»
 - [ ] two or three benchmarks chosen and looked at (`jt-refs`), the moves taken
