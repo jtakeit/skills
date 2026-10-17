@@ -131,6 +131,7 @@ scripts/
   jt-pitch    record the pitch video, phone and desktop
   jt-clips    cut a video into short silent loops
   jt-shots    every page, section by section, at a laptop and a phone
+  jt-refs     the sixteen benchmark sites, looked at live — the bar a spec is built to
   jt-clean    take the working files out of the tree before a handover
 agents/       site-critic: reviews the built site from screenshots, returns fixes
 templates/    the variant switcher used while directions are compared

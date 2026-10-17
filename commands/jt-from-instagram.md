@@ -81,6 +81,10 @@ Before a line of the page, in this order — the platform's own
    in one line: the page appears there as it is written, and the corner says
    where the site is on the platform.
 
+While `npm ci` runs, choose two or three benchmarks for this business and look
+at them (`jt-refs`, `jtakeit-sites:spec` → *The bar*) — the level the page is
+built to, not a look to copy.
+
 Then ask, once, which pages beside the landing — the team, the price list, the
 work, a journal — recommending from what the portrait found
 (`jtakeit-sites:spec` → *The pages*), and build them per `jtakeit-sites:spec`, from the portrait, with

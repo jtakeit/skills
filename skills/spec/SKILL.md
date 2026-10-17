@@ -57,6 +57,29 @@ publishes all three on Fresha; no journal, his captions are a line each». Recor
 the answer as `design.pages`. Every page gets the header and the footer, and
 the header's anchors become links.
 
+## The bar: two or three sites to stand next to
+
+The rules in `docs/` make a page that is correct. What makes it good is knowing
+what better looks like, and that is
+[references/benchmarks.md](references/benchmarks.md): sixteen sites of local
+businesses in our trades, each recognised by Awwwards, chosen by the developer.
+Read what the sixteen have in common first — it is the bar. Then, before the
+shape is chosen, pick **two or three** whose `suits` matches this business,
+look at them, and write down the moves taken:
+
+```bash
+node "$JT/scripts/jt-refs.mjs"                    # the list
+node "$JT/scripts/jt-refs.mjs" porem hagis        # pictures, into .jtakeit/refs/
+node "$JT/scripts/jt-state.mjs" set design.benchmarks "porem: booking in the hero; hagis: overlap band"
+```
+
+Start `jt-refs` in the background beside `npm ci`; it takes half a minute.
+**A move, not a look**: their way of making the type the image, of letting one
+colour carry the ground, of putting the booking on the first screen — never
+their copy, photographs, logo, palette or layout whole. The page is built from
+this business's material to the level of those, and the critic is shown the
+same ones.
+
 Use the `frontend-design` skill once, with the portrait as the brief. Its
 material is unusually good here: the palette comes off their own photographs,
 the voice off their own captions, and the hero off whatever they photograph
@@ -565,6 +588,8 @@ the pitch is the whole page, and those are different jobs.
       written for that one query — carried by sentences, not by repetition
 - [ ] the hero moves, in their colours — or it does not and the reason is
       written down, not forgotten
+- [ ] two or three benchmarks chosen and looked at (`jt-refs`), the moves taken
+      recorded in `design.benchmarks` — moves, not looks
 - [ ] the shape chosen from the catalogues and recorded in `design.*` — and not
       the shape the last project used
 - [ ] one element on the page that could not be moved to another site

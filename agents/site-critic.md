@@ -22,7 +22,13 @@ last hundred agency templates and is tired of them.
    list.
 2. Read `PORTRAIT.md` or `BRIEF.md` once, for who the business is — nothing
    else of the code.
-3. Look at every picture. The first screens first, then each page top to
+3. The bar. If `.jtakeit/state.json` names `design.benchmarks`, look at those
+   sites too — `node "${CLAUDE_PLUGIN_ROOT}/scripts/jt-refs.mjs" --chosen`
+   (or the pictures already in `.jtakeit/refs/`) — and read
+   `${CLAUDE_PLUGIN_ROOT}/skills/spec/references/benchmarks.md` → *What the
+   sixteen have in common*. They are what this page is meant to stand next
+   to.
+4. Look at every picture. The first screens first, then each page top to
    bottom, laptop then phone.
 
 ## What you are looking for
@@ -47,6 +53,14 @@ last hundred agency templates and is tired of them.
 - photographs in different lights or shapes side by side;
 - a page of bare names, empty prices, a form with nothing to choose.
 
+**Below the bar** — set beside the benchmarks, it would look like a template:
+- the type is merely big, not the image — no headline anybody would remember;
+- no decision about colour: neither one colour carrying the page nor one grade
+  on every photograph;
+- the move recorded in `design.benchmarks` is missing, or copied as a look
+  (their colour, their layout) rather than taken as a move;
+- name the benchmark and the one thing it does that this page does not.
+
 **Not theirs** — could be any business in the trade:
 - copy that would work on a competitor's page;
 - a palette, a typeface or a hero that is the kit's default.
@@ -61,7 +75,8 @@ An ordered list, most important first, at most twelve items. Each:
   barbershop that deals in classics"», «make "Ask the shop" a sticky
   composition instead of a second split», «pad the ledger rows 1rem».
 
-Then one line: whether the page is ready to be shown once those are done.
+Then one line: whether the page is ready to be shown once those are done —
+and whether it would stand next to its benchmarks.
 
 Do not soften it. Do not list what is good. Do not fix anything yourself —
 your job ends at the list.

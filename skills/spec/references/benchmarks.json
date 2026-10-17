@@ -1,0 +1,226 @@
+[
+  {
+    "id": "rendezvous",
+    "name": "Rendezvous Barbers",
+    "url": "https://www.myrendezvous.ca/",
+    "trade": "barber",
+    "place": "Toronto",
+    "award": "Awwwards HM 2024",
+    "suits": "a shop with a strong colour of its own and a young, fashion-led clientele",
+    "moves": [
+      "one loud brand colour as the whole ground instead of a photograph behind the hero",
+      "an editorial serif headline with half the sentence in italic",
+      "video in a rounded frame that opens up as the page scrolls; the book button fixed bottom right"
+    ]
+  },
+  {
+    "id": "porem",
+    "name": "Porem Barbershop",
+    "url": "https://porembarbershop.nl/en",
+    "trade": "barber",
+    "place": "Amsterdam",
+    "award": "Awwwards nominee 2024",
+    "suits": "any business whose pitch is the booking — two shops, a short menu, walk-ins",
+    "moves": [
+      "the booking in the hero: choose the shop, then the service with its price and length, then «check availability»",
+      "the rating line and a strip of reviews right under the first screen",
+      "service tiles with a photograph each and a «most popular» / «best deal» tag"
+    ]
+  },
+  {
+    "id": "hagis",
+    "name": "Hagi's",
+    "url": "https://hagisbarbering.com/",
+    "trade": "barber",
+    "place": "Germany",
+    "award": "Awwwards SOTD 2021 (the site has been redesigned since)",
+    "suits": "a classic, heritage shop with a strong interior",
+    "moves": [
+      "a quiet, centred serif statement on a light ground with one button",
+      "a dark band with photographs overlapping each other — the overlap composition",
+      "the locations in the header beside booking"
+    ]
+  },
+  {
+    "id": "brzozowski",
+    "name": "Atelier Brzozowski",
+    "url": "https://atelierbrzozowski.com/",
+    "trade": "salon",
+    "place": "Poland",
+    "award": "Awwwards HM 2024",
+    "suits": "a salon with editorial portraits and a founder's name on the door",
+    "moves": [
+      "the name in a huge display serif over a full-screen portrait",
+      "a short manifesto in a narrow column beside the founding year",
+      "one warm grade across every photograph"
+    ]
+  },
+  {
+    "id": "venetian",
+    "name": "Venetian Nail Spa",
+    "url": "https://venetianspa.ca/",
+    "trade": "nails, spa",
+    "place": "Winnipeg",
+    "award": "Awwwards HM 2026",
+    "suits": "nails, brows, lashes, spa — close-up, hand-led work",
+    "moves": [
+      "a thin serif in capitals over a close-up of hands",
+      "arched frames for photographs, soft gold as the one accent",
+      "a phone hero composed for the phone, not squeezed from the laptop"
+    ]
+  },
+  {
+    "id": "mcoupe",
+    "name": "M / Coupe",
+    "url": "https://mcoupe.ca/",
+    "trade": "salon",
+    "place": "Québec",
+    "award": "Awwwards HM 2022",
+    "suits": "a salon with black-and-white portraits and a short name",
+    "moves": [
+      "a black-and-white photograph with the wordmark the full width beneath it",
+      "a minimal header with one outlined booking button",
+      "almost nothing else: it works by scale alone"
+    ]
+  },
+  {
+    "id": "hype",
+    "name": "HYPE Tattoo",
+    "url": "https://hype-tattoo.com/",
+    "trade": "tattoo",
+    "place": "Toronto",
+    "award": "Awwwards HM 2025",
+    "suits": "a studio of several artists where the crew is the brand",
+    "moves": [
+      "the whole team in one photograph as the hero — the people are the product",
+      "a hand-drawn scribble over the headline",
+      "one cyan accent, on the consultation button only"
+    ]
+  },
+  {
+    "id": "muchacha",
+    "name": "Muchacha",
+    "url": "https://muchachamontpellier.fr/",
+    "trade": "bar, restaurant",
+    "place": "Montpellier",
+    "award": "Awwwards SOTD 2023",
+    "suits": "a place with atmosphere — evenings, a room people come for",
+    "moves": [
+      "a huge wordmark over an atmospheric photograph, with a strip of thumbnails in the hero (our stage gallery)",
+      "the opening hours as a running line",
+      "handwritten notes in the margins"
+    ]
+  },
+  {
+    "id": "zimmerl",
+    "name": "Restaurant Zimmerl",
+    "url": "https://www.restaurantzimmerl.at/",
+    "trade": "restaurant",
+    "place": "Austria",
+    "award": "Awwwards HM 2025",
+    "suits": "a high-end, precise business with one person at its centre",
+    "moves": [
+      "deep green and gold, a thin serif",
+      "a number as the heading — «23 Gänge» (the numbers composition)",
+      "the chef's portrait with text, photographs of the work offset from each other"
+    ]
+  },
+  {
+    "id": "sunbeam",
+    "name": "Sunbeam Bagels",
+    "url": "https://sunbeambagels.com/",
+    "trade": "café",
+    "place": "Bryan, Texas",
+    "award": "Awwwards HM 2026",
+    "suits": "a friendly, everyday place with a warm room",
+    "moves": [
+      "a chunky retro serif over a photograph of the room",
+      "the opening hours in the header itself",
+      "a floating pill menu at the bottom of the screen; cut-out products on a bright band"
+    ]
+  },
+  {
+    "id": "sqew",
+    "name": "Sqew",
+    "url": "https://www.sqew.uk/",
+    "trade": "street food",
+    "place": "Leeds and Manchester",
+    "award": "Awwwards HM 2025",
+    "suits": "a loud, casual business with two or three locations",
+    "moves": [
+      "extra-condensed capitals on a textured, saturated ground",
+      "cut-out product photographs breaking out of the frame",
+      "three header buttons: opening times, find us, order"
+    ]
+  },
+  {
+    "id": "escape",
+    "name": "Escape Coffee",
+    "url": "https://escape.cafe/",
+    "trade": "coffee",
+    "place": "Montreal",
+    "award": "Awwwards SOTD 2024",
+    "suits": "a business with an attitude and one line it lives by",
+    "moves": [
+      "a huge condensed slogan over a dark, moody photograph",
+      "a vertical rail at the side of the page",
+      "product cards with their particulars as a table — close to our ledger"
+    ]
+  },
+  {
+    "id": "bernice",
+    "name": "Bernice",
+    "url": "https://bernicebakery.com/",
+    "trade": "bakery",
+    "place": "Montreal",
+    "award": "Awwwards HM 2025",
+    "suits": "a playful business whose product photographs well from above",
+    "moves": [
+      "a heavy grotesque over a flat-lay seen from above",
+      "a rotating round badge as the button",
+      "product cards over running words"
+    ]
+  },
+  {
+    "id": "alpinecore",
+    "name": "AlpineCore",
+    "url": "https://alpinecore.ch/",
+    "trade": "pilates",
+    "place": "Geneva and Haute-Savoie",
+    "award": "Awwwards HM 2025",
+    "suits": "a studio, a practice, anything calm — and the Swiss market",
+    "moves": [
+      "a landscape in the hero with thin, elegant type",
+      "topographic lines as a quiet ground",
+      "a small inset photograph beside the list of sections"
+    ]
+  },
+  {
+    "id": "yogamaya",
+    "name": "Yogamaya",
+    "url": "https://yogamaya.com",
+    "trade": "yoga",
+    "place": "New York",
+    "award": "Awwwards HM 2025",
+    "suits": "a business with many offers and a strong typographic identity",
+    "moves": [
+      "the menu is the hero: the sections in a giant condensed serif",
+      "a line drawing behind the letters",
+      "a running ribbon with the next courses"
+    ]
+  },
+  {
+    "id": "aventura",
+    "name": "Aventura Dental Arts",
+    "url": "https://aventuradentalarts.com/",
+    "trade": "clinic",
+    "place": "Miami",
+    "award": "Awwwards SOTD 2026",
+    "suits": "a practitioner people trust as a person — clinic, therapist, master",
+    "moves": [
+      "a condensed serif headline running across a photograph of the practitioner at work",
+      "trust through the person, not through icons",
+      "a tidy header: the form, the phone, the booking"
+    ]
+  }
+]

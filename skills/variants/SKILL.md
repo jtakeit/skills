@@ -146,7 +146,11 @@ once for all of them: a single design pass produces one point of view with three
 finishes. Without it, do the same pass by hand.
 
 Give it: the business, the audience, the page's single job, the direction's
-one-line thesis, the real copy, the actual photographs. Take from it: the token
+one-line thesis, the real copy, the actual photographs — and one or two
+benchmarks for the direction from `jtakeit-sites:spec` →
+[references/benchmarks.md](../spec/references/benchmarks.md) (`jt-refs`), a
+different pair per variant, so three directions are three levels of ambition
+rather than three palettes. Take from it: the token
 system, the type pairing, the layout concept and the one signature element. Then
 build it here, on the scaffold's rules, which the design pass does not know
 about — the annotations, `under()`, the photo pipeline, the shared form.
