@@ -676,10 +676,15 @@ const fileOf = (page) => {
 section('header', async () => {
   if (!flag('url') && existsSync(dist)) {
     const menus = new Map();
+    // A site in two languages has two headers, each the same on every page of
+    // its language — /en/ is not missing «Leistungen», it says «Services». So
+    // each page is held to the home of its own language, read off <html lang>.
+    const langOf = new Map();
     for (const page of PAGES) {
       const file = fileOf(page);
       if (!file) continue;
       const html = readFileSync(file, 'utf8');
+      langOf.set(page, (/<html\b[^>]*\blang="([^"]+)"/i.exec(html)?.[1] ?? '').toLowerCase().split('-')[0]);
       const header = /<header[\s\S]*?<\/header>/i.exec(html)?.[0] ?? '';
       const links = [...header.matchAll(/<a\b[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)].map(([, href, inner]) => ({
         href,
@@ -689,14 +694,25 @@ section('header', async () => {
     }
     const labels = (links) => links.map((l) => l.label.toLowerCase()).filter(Boolean).sort().join(' · ');
     const home = menus.get('/') ?? [...menus.values()][0] ?? [];
-    const drift = [...menus.entries()].filter(([, links]) => labels(links) !== labels(home)).map(([page, links]) => {
-      const missing = home.filter((h) => !links.some((l) => l.label.toLowerCase() === h.label.toLowerCase())).map((h) => h.label);
-      return `${page}${missing.length ? ` lacks ${missing.join(', ')}` : ' differs'}`;
+    // The home of each language: its shortest page — `/` for the first, `/en/`
+    // for English.
+    const depth = (p) => p.split('/').filter(Boolean).length;
+    const homeOf = new Map();
+    for (const page of [...menus.keys()].sort((a, b) => depth(a) - depth(b) || a.localeCompare(b))) {
+      const lang = langOf.get(page) ?? '';
+      if (!homeOf.has(lang)) homeOf.set(lang, page);
+    }
+    const drift = [...menus.entries()].flatMap(([page, links]) => {
+      const reference = menus.get(homeOf.get(langOf.get(page) ?? '')) ?? home;
+      if (labels(links) === labels(reference)) return [];
+      const missing = reference.filter((h) => !links.some((l) => l.label.toLowerCase() === h.label.toLowerCase())).map((h) => h.label);
+      return [`${page}${missing.length ? ` lacks ${missing.join(', ')}` : ' differs'}`];
     });
+    const langs = homeOf.size > 1 ? ` in each of ${homeOf.size} languages` : '';
     if (!menus.size) note('header', 'no pages found in the build to compare');
     else if (!home.length) fail('header', 'no <header> with links on the home page — a site needs its name and its sections at the top of every page');
     else if (drift.length) fail('header', `the header is not the same on every page: ${drift.slice(0, 4).join('; ')} — an anchor that only exists on the home page is a link to /#…, not a link that disappears`);
-    else pass('header', `the same ${home.length} links on all ${menus.size} pages`);
+    else pass('header', `the same links on all ${menus.size} pages${langs}`);
 
     // Each item to a place of its own, and a place that exists.
     const shared = [];
