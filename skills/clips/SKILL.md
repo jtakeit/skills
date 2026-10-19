@@ -103,8 +103,15 @@ all in.
 ## Kept by browsers, and named for it
 
 `public/` is served for a minute: a returning visitor downloads every clip
-again, and PageSpeed says so. A site that wants its clips kept declares the
-directory in `_meta.json`, beside what `writeMeta()` writes:
+again, and PageSpeed says so. From `@jtakeit/kit` 0.10.0 the better answer is
+a name that carries the bytes: in `jtakeit-meta.mjs`, `KEPT_BY_NAME =
+['clips']`, and the build copies each clip to `/_astro/kept/clips/` with a
+hash in its name, kept for a year, and points the page at the copy. Write the
+clip's address out whole where it is used — the build names any it could not
+find. Nothing is ever held against the site that way.
+
+On an older kit, or for names the site wants to keep, declare the directory
+in `_meta.json`, beside what `writeMeta()` writes:
 
 ```js
 meta.cache = [{ prefix: '/clips/', maxAge: 86400 }];
