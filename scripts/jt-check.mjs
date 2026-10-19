@@ -501,9 +501,20 @@ async function settle(page) {
     // Most of a screen at a step: every block still passes through the
     // viewport, which is all an observer needs to fire.
     const step = window.innerHeight * 0.8;
+    // Two frames a step, not a timeout. Scroll events coalesce and an observer
+    // runs on frames, so on a busy thread a walk paced by timeouts reaches the
+    // bottom and comes back before the page has been told it moved — and every
+    // block below the first screen is then judged as one that never arrived.
+    // The timeout is only the ceiling for a page that hands out no frames.
+    const frames = () =>
+      new Promise((r) => {
+        const done = setTimeout(r, 250);
+        requestAnimationFrame(() => requestAnimationFrame(() => { clearTimeout(done); r(); }));
+      });
     for (let y = 0; y < document.body.scrollHeight; y += step) {
       window.scrollTo(0, y);
-      await new Promise((r) => setTimeout(r, 50));
+      await frames();
+      await new Promise((r) => setTimeout(r, 30));
     }
     window.scrollTo(0, 0);
     // The pictures the walk asked for, arrived: a lazy photograph still on
@@ -1001,16 +1012,44 @@ section('in-page links', async () => {
         window.location.hash = '';
         window.location.hash = h;
       }, href);
-      await page.waitForTimeout(1200);
-      const landed = await page.evaluate((h) => {
+      // Until the scroll has settled, not for a fixed time. A smooth scroll
+      // takes longer the further it goes — five thousand pixels is about two
+      // seconds in Chromium, longer on a busy machine — and a heading measured
+      // mid-flight reads as an anchor that lands nowhere. Settled is scrollY
+      // unchanged across several frames, with a ceiling.
+      const landed = await page.evaluate(async (h) => {
+        const frame = () => new Promise((r) => { const t = setTimeout(r, 100); requestAnimationFrame(() => { clearTimeout(t); r(); }); });
+        const started = performance.now();
+        let last = -1;
+        let still = 0;
+        while (performance.now() - started < 5000) {
+          await frame();
+          if (Math.abs(window.scrollY - last) < 1) still += 1;
+          else still = 0;
+          last = window.scrollY;
+          if (still >= 4 && performance.now() - started > 150) break;
+        }
         const el = document.querySelector(h);
         const head = el.querySelector('h1, h2, h3') ?? el;
         const top = head.getBoundingClientRect().top;
-        return { top: Math.round(top), vh: window.innerHeight };
+        return {
+          top: Math.round(top),
+          vh: window.innerHeight,
+          y: Math.round(window.scrollY),
+          // Where the heading is on the page, so a miss can say how far off it is.
+          at: Math.round(top + window.scrollY),
+          max: Math.round(document.documentElement.scrollHeight - window.innerHeight),
+          settled: still >= 4,
+        };
       }, href);
       // The heading has to be on screen and near the top of it: landing on a
       // section's padding shows an empty screen and reads as a dead link.
-      if (landed.top < 0 || landed.top > landed.vh * 0.45) bad.push(`${href} lands with its heading at ${landed.top}px`);
+      if (landed.top < 0 || landed.top > landed.vh * 0.45)
+        bad.push(
+          `${href} lands with its heading ${landed.top}px from the top of the screen ` +
+            `(heading at ${landed.at}px on the page, scrolled to ${landed.y} of ${landed.max}` +
+            `${landed.settled ? '' : ', still moving after 5 s'})`,
+        );
     }
     await page.close();
     bad.length
@@ -1293,12 +1332,51 @@ section('surface', async () => {
         );
     }
 
+    // A block left waiting by the walk is looked at again where it is.
+    //
+    // The walk is a fast scroll through the whole page while eleven other
+    // sections compete for the same machine, and on a busy thread an observer
+    // can miss it entirely — the block is then still waiting, and still
+    // observed. That is not the fault this check is for. The fault is a block
+    // that stays hidden with the reader in front of it, so the reader is put
+    // in front of it: scrolled to, given frames and its entrance's time, then
+    // judged.
+    if (surface.stuck.length) {
+      const again = await open(1440, 900);
+      await again.waitForTimeout(600);
+      surface.stuck = await again.evaluate(async () => {
+        const hidden = (el) => {
+          const cs = getComputedStyle(el);
+          return Number(cs.opacity) < 0.99 || /inset\(.*100%/.test(cs.clipPath);
+        };
+        const waiting = (el) =>
+          !el.classList.contains('is-in') && (hidden(el) || [...el.children].some((child) => hidden(child)));
+        const frames = () =>
+          new Promise((r) => {
+            const t = setTimeout(r, 250);
+            requestAnimationFrame(() => requestAnimationFrame(() => { clearTimeout(t); r(); }));
+          });
+        document.documentElement.style.scrollBehavior = 'auto';
+        const left = [];
+        for (const el of [...document.querySelectorAll('[data-reveal]')].filter((one) => one.dataset.reveal !== 'none')) {
+          if (!waiting(el)) continue;
+          el.scrollIntoView({ block: 'center' });
+          await frames();
+          await new Promise((r) => setTimeout(r, 1200));
+          if (waiting(el)) left.push(el.dataset.reveal || 'rise');
+        }
+        document.documentElement.style.scrollBehavior = '';
+        return left;
+      });
+      await again.close();
+    }
+
     surfaceShape = surface;
 
     if (surface.stuck.length)
       fail(
         'reveals fire',
-        `${surface.stuck.length} block(s) are still hidden after the page has been scrolled through ` +
+        `${surface.stuck.length} block(s) are still hidden with the screen in front of them ` +
           `(${[...new Set(surface.stuck)].join(', ')}) — that is content nobody can read. The observer ` +
           'in Layout.astro is what adds .is-in.',
       );
