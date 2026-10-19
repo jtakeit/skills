@@ -672,6 +672,58 @@ const fileOf = (page) => {
   return null;
 };
 
+// The names browsers keep. A directory `_meta.json` gives a lifetime under
+// `cache` is a directory whose files the platform holds to their contents
+// for that long once the site has an address: new bytes under one of those
+// names are refused (JTK_E_CACHED_FILE_CHANGED), and lowering `maxAge` frees
+// nothing sooner. So a name there is either one that carries its version —
+// `scene-1.v2.webp`, `einsatz.3f9a1c.mp4` — or one the site is content never to
+// change. Past a day an unversioned name is a photograph that cannot be fixed
+// in place for months, which is the fault; a day or less is said, not failed.
+section('cache', async () => {
+  if (flag('url') || !existsSync(join(dist, '_meta.json'))) return;
+  let rules = [];
+  try {
+    const meta = JSON.parse(readFileSync(join(dist, '_meta.json'), 'utf8'));
+    rules = (Array.isArray(meta.cache) ? meta.cache : [])
+      .filter((one) => one && typeof one.prefix === 'string' && typeof one.maxAge === 'number' && one.maxAge > 60)
+      .map((one) => ({ dir: one.prefix.replace(/^\/+|\/+$/g, ''), maxAge: Math.min(one.maxAge, 31_536_000) }))
+      .filter((one) => one.dir !== '');
+  } catch {
+    fail('cache', '_meta.json does not parse — the edge reads nothing from it, redirects and drafts included');
+    return;
+  }
+  if (!rules.length) return;
+  // A version is a token with a digit in it: `v2`, a hash. `-portrait` and
+  // `-facade` are words, not versions.
+  const versioned = (name) => /[.\-_](v\d+|(?=[a-z_-]*\d)[a-z0-9_-]{6,})\.[a-z0-9]+$/i.test(name);
+  const long = [];
+  const short = [];
+  for (const rule of rules) {
+    const root = join(dist, rule.dir);
+    if (!existsSync(root)) continue;
+    const walk = (dir, rel) => {
+      for (const name of readdirSync(dir)) {
+        const full = join(dir, name);
+        if (statSync(full).isDirectory()) walk(full, `${rel}${name}/`);
+        else if (!name.endsWith('.html') && !versioned(name)) (rule.maxAge > 86400 ? long : short).push(`/${rule.dir}/${rel}${name}`);
+      }
+    };
+    walk(root, '');
+  }
+  const days = (s) => (s >= 86400 ? `${Math.round(s / 86400)} day(s)` : `${Math.round(s / 3600)} h`);
+  if (long.length)
+    fail(
+      'cache',
+      `${long.slice(0, 5).join(', ')}${long.length > 5 ? ` +${long.length - 5} more` : ''} keep their names under a lifetime past a day — ` +
+        'once the site has an address none of them can change in place until it runs out. Put a version in the name ' +
+        '(scene-1.v1.webp) or declare a day.',
+    );
+  else if (short.length)
+    note('cache', `${short.length} file(s) under a declared lifetime without a version in the name — new contents for one of them take a new name, or wait out the hold`);
+  else pass('cache', `${rules.map((r) => `/${r.dir}/ ${days(r.maxAge)}`).join(', ')} — every name there carries its version`);
+});
+
 // The header: the same links on every page, each to a place of its own.
 section('header', async () => {
   if (!flag('url') && existsSync(dist)) {

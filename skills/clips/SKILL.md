@@ -100,6 +100,29 @@ Knobs worth knowing, in the order to reach for them when a clip is over budget:
 gradients for mush), `--width 360`. A hero of five should come in around 300KB
 all in.
 
+## Kept by browsers, and named for it
+
+`public/` is served for a minute: a returning visitor downloads every clip
+again, and PageSpeed says so. A site that wants its clips kept declares the
+directory in `_meta.json`, beside what `writeMeta()` writes:
+
+```js
+meta.cache = [{ prefix: '/clips/', maxAge: 86400 }];
+```
+
+That is a promise about names, and on a site with an address the platform
+keeps it: a name browsers were told to keep belongs to its contents until the
+last copy may have run out. A build that puts other bytes under it is refused
+(`JTK_E_CACHED_FILE_CHANGED`), and lowering `maxAge`, dropping the file or a
+rollback frees nothing sooner. So:
+
+- **a recut clip gets a new name** — `needle.v2.mp4`, its poster
+  `needle.v2.jpg` — and the page points at it; the old name may simply go;
+- a day for names that may be reused, a year only for names that carry their
+  version; `jt-check` fails an unversioned name under more than a day;
+- before replacing one on a launched site, `get_build` lists what is `held`
+  and until when; `preflight` says the same.
+
 ## The owner replaces one without us
 
 A clip declared in the catalogue can be swapped in the admin, which is most of

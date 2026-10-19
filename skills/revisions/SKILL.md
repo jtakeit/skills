@@ -131,6 +131,11 @@ Watch for the changes that quietly move the project:
   panel. Reload `jtakeit-sites:seo-geo` when the facts move.
 - **Photos.** Real photos arriving late usually change the layout they sit in.
   Budget for that rather than dropping them into a frame sized for placeholders.
+- **A file browsers keep.** On a site with an address, a photograph or a clip
+  under a `cache` directory of `_meta.json` is held to its contents: new
+  bytes take a new name (`scene-1.v2.webp`) and the page points at it, or the
+  build is refused — `JTK_E_CACHED_FILE_CHANGED`. `get_build` lists what is
+  `held` and until when; lowering `maxAge` frees nothing sooner.
 
 ## The loop
 
