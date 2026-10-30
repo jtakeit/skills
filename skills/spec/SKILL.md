@@ -615,6 +615,12 @@ the pitch is the whole page, and those are different jobs.
       from the catalogue, each doing a different job, all of them drawn from the
       portrait, and recorded in `design.angles`
 - [ ] the blocks named after what they are on this page, not after a template
+- [ ] what changes on the business's calendar — the next event's date, the
+      hour a countdown counts to, a ticket link, a price — is a field the owner
+      edits (`client_editable`), **never a constant in a script**; one the page
+      does not print is `no_tap_target` and `beside` the field it goes with, or
+      carries a `hint`; `validate_catalogue` with no `JTK_W_OWNER_LOCKED` or
+      `JTK_W_HIDDEN_UNEXPLAINED` left unexplained
 - [ ] a questions block below the form, every answer from their own captions,
       each one readable lifted out of the page, no `FAQPage` markup yet
 - [ ] their photographs in `src/assets/`, registered with alt text, no customer's face
