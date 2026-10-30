@@ -282,6 +282,12 @@ and the next person to see these is paying.
       the catalogue for this client's material, recorded in `design.angles`, and
       every variant carries all of them
 - [ ] the blocks named after what they are on this page, not after a template
+- [ ] what changes on the business's calendar — the next event's date, the
+      hour a countdown counts to, a ticket link, a price — is a field the owner
+      edits (`client_editable`), **never a constant in a script**; one the page
+      does not print is `no_tap_target` and `beside` the field it goes with, or
+      carries a `hint`; `validate_catalogue` with no `JTK_W_OWNER_LOCKED` or
+      `JTK_W_HIDDEN_UNEXPLAINED` left unexplained
 - [ ] a questions block below the form, answers standing on their own, `FAQPage`
       markup saying the same words as the page
 - [ ] every variant works at 360px with no horizontal scroll anywhere
