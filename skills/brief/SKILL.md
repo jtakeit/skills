@@ -129,6 +129,14 @@ wrong guess is a refusal or a wrong page later:
 - **Where the enquiries go** — a Telegram chat or an email address, which a
   person links in the panel (**The site → Notifications**). An agent cannot
   link one; ask which, and say it is theirs to do before the launch.
+- **Whether the enquiry form takes photographs** — and how many, 1 to 7: an
+  order form for a website, a quote from pictures of the job. Most forms take
+  none; ask, never assume. When it does, it is `photos: <n>` on the block that
+  collects (`cta_banner` in the scaffold): the kit draws the picker and the
+  privacy sentence, and the platform cleans the pictures, keeps them privately
+  in the EU and deletes them with the enquiry — it takes none a form did not
+  declare (`jtakeit:///guides/connecting-a-site.md`, *Photographs with an
+  enquiry*). Never health or other sensitive pictures.
 - **The pages.** The landing, and which of the rest: the team (one entry per
   master; the panel adds more later), the price list, the work, a journal —
   recommended from what the business has, not ticked by default.
@@ -255,6 +263,7 @@ cannot reach.
 
 - [ ] `BRIEF.md` filled: every fact has a source, every gap is `NEEDS CLIENT`
 - [ ] the stack, the currency, the languages, where enquiries go — answered
+- [ ] photographs with an enquiry: none, or how many — asked and answered
 - [ ] bookings: paid online or on the spot asked and answered; the kit taken
       whole, or each thing taken out under *Decisions*; every default said back
 - [ ] the mark in hand, or the monogram said back and accepted
