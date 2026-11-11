@@ -14,6 +14,8 @@ and do not guess any of them:
   directory, the repository and the site's slug on jtakeit);
 - the language of the site, as a BCP 47 tag (`de-CH`, `fr-CH`, `en`, …);
 - the vertical;
+- the currency the prices are in, three letters (`chf`) — `create_site` takes
+  it, once;
 - whether the business takes bookings — and if so, its kind, for the kit
   (`hotel`, `car_rental`, …);
 - **how many design variants**;
@@ -29,10 +31,10 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/jt-init.mjs" \
 
 It runs `npx @jtakeit/astro create`, writes `.jtakeit/state.json` and
 `STATUS.md`, and commits. Nothing leaves the machine. What it prints next is the
-order the platform wants: `create_site` on the jtakeit MCP server (record the id
-with `jt-state set site.id <id>`), the dev server and `open_dev_session`, then
-the GitHub repository — `gh repo create <owner>/<slug> --private --source .
---push`, asked of the developer before it is run — and the jtakeit GitHub App on
-it, which a person installs.
+order the platform wants: `create_site` on the jtakeit MCP server with the slug,
+the name and the currency (record the id with `jt-state set site.id <id>`), the
+dev server and `open_dev_session`, then the GitHub repository — `gh repo create
+<owner>/<slug> --private --source . --push`, asked of the developer before it
+is run — and the jtakeit GitHub App on it, which a person installs.
 
 Then run the brief per `jtakeit-sites:brief`.

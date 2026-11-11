@@ -1,6 +1,6 @@
 ---
 name: brief
-description: Stage 0 of the jtakeit pipeline — gather everything about the client before a line of design is written, in one conversation, and build on the developer's yes. Load when starting a new client, when the developer says "here is the client", pastes an existing site or an Instagram handle, or when BRIEF.md is still the scaffold's empty one. Produces BRIEF.md, the facts in src/data/site.ts and jtk/site.json, the site on the platform (create_site), and the agreed variant count.
+description: Stage 0 of the jtakeit pipeline — gather everything about the client before a line of design is written, in one conversation, and build on the developer's yes. Load when starting a new client, when the developer says "here is the client", pastes an existing site or an Instagram handle, or when BRIEF.md is still the scaffold's empty one. Produces BRIEF.md, the facts in src/data/site.ts, the site on the platform (create_site, with its currency), and the agreed variant count.
 ---
 
 # Stage 0 · The brief
@@ -114,11 +114,16 @@ wrong guess is a refusal or a wrong page later:
   Another static generator is taken too and is laid out by hand
   (`jtakeit:///guides/connecting-a-site.md`, *On another generator*); this
   plugin's design stages assume Astro. Never a server-rendered site.
-- **The currency**, three letters — `chf` for Atelier Nord. One currency a
-  site: it goes into `jtk/site.json` as `"business": {"currency": "chf"}` and
-  nowhere else; prices are whole minor units (18000 is CHF 180), and a page
-  prints them with `siteCurrency`, never with a code or a sign of its own —
-  `preflight` fails a price in another currency.
+- **The currency**, three letters — `chf` for Atelier Nord. It goes to
+  `create_site` as `currency`, once: after that a person changes it in the
+  panel (**The site → The business**), and a contract-3 import that brings a
+  new one is refused, `JTK_E_CURRENCY_SET`. A site made without it takes it
+  from a committed `jtk/site.json` at the import — `"business": {"currency":
+  "chf"}` on contract 2 (`jtk/catalogue.json`), `"currency": "CHF"` at the top
+  on contract 3 (`jtk/schema.json`). One currency a site, and nowhere else:
+  prices are whole minor units (18000 is CHF 180), and a page prints them with
+  `siteCurrency`, never with a code or a sign of its own — `preflight` fails a
+  price in another currency, and prices on a site with no currency at all.
 - **For a business that takes bookings: paid online or on the spot.** Ask,
   never assume. Say back what the current site does («people book online and
   pay at the salon») and ask whether paying online is something the developer
@@ -204,10 +209,11 @@ into `BRIEF.md`'s *Done when* list.
 
 As soon as the first answer gives the slug and the name — not after the last:
 
-1. **`create_site`** with the slug and the name. The studio sees the row in the
-   panel from this minute, and the panel's *Setting up* starts taking the steps
-   that are a person's — the GitHub App, where enquiries go, whose the site is —
-   while you work.
+1. **`create_site`** with the slug, the name and the currency — left out only
+   when it is not answered yet, and then `jtk/site.json` carries it (above).
+   The studio sees the row in the panel from this minute, and the panel's
+   *Setting up* starts taking the steps that are a person's — the GitHub App,
+   where enquiries go, whose the site is — while you work.
 2. **The project**: `node "$JT/scripts/jt-init.mjs" --slug atelier-nord --name
    "Atelier Nord" --locale de-CH --kit salon --variants 3` — a thin wrapper
    around `npx @jtakeit/astro create` that also writes the state file. Then
@@ -237,9 +243,11 @@ is rendered from here, so the same phone number cannot appear in two shapes on
 one page. Confirmed facts only; anything not confirmed is absent, with a
 comment saying it was asked for.
 
-**`jtk/site.json`** — the currency. The business's country, currency and time
-zone end up on the panel's **The site → The business**; the import puts the
-currency there, and the rest is typed in the panel from what the brief says.
+**`jtk/site.json`** — only for a site made without a currency: the currency,
+in its contract's form (above). The business's country, currency and time zone
+end up on the panel's **The site → The business**; `create_site` puts the
+currency there, or the import from this file, and the rest is typed in the
+panel from what the brief says.
 
 **The state file** — variant count, locale, vertical, slug, the site's id.
 
@@ -268,7 +276,8 @@ cannot reach.
       whole, or each thing taken out under *Decisions*; every default said back
 - [ ] the mark in hand, or the monogram said back and accepted
 - [ ] the GitHub App's installation asked for, from the person who can do it
-- [ ] `create_site` done; the site's id in the state file; a dev session open
+- [ ] `create_site` done, with the currency; the site's id in the state file;
+      a dev session open
 - [ ] `src/data/site.ts` holds only confirmed facts
 - [ ] variant count agreed and written to the state file
 - [ ] the one query agreed — `[service] [city]` — and written into `SEARCH`
@@ -281,6 +290,6 @@ Then:
 
 ```bash
 node "$JT/scripts/jt-state.mjs" advance variants --note "brief approved"
-git add BRIEF.md src/data/site.ts jtk/site.json
+git add BRIEF.md src/data/site.ts   # and jtk/site.json, where you wrote it
 git commit -m "brief: Atelier Nord" && git push
 ```

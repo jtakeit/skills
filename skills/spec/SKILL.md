@@ -415,8 +415,11 @@ current situation is bad is usually presentation, not a lack of material.
 **Before a line of the page**, the platform's order (`jtakeit:///guides/start.md`,
 step 2) — not after it:
 
-1. `create_site` with the slug and the name — `atelier-nord`, «Atelier Nord»,
-   `locale` `de-CH`; record its id with
+1. `create_site` with the slug, the name and the currency — `atelier-nord`,
+   «Atelier Nord», `locale` `de-CH`, `currency` `chf`: what their booking page
+   or their own site prices in (`.jtakeit/booking.json`, `site-today.json`),
+   else their country's. It is given once; after that a person changes it in
+   the panel. Record its id with
    `node "$JT/scripts/jt-state.mjs" set site.id <id>`. It is a demo row in the
    developer's list, nothing public. «That slug is taken» with no id is another
    account's site (`JTK_E_SLUG_TAKEN`) — choose another.
@@ -493,7 +496,8 @@ saved which account the repositories go to — `jt-setup owner` prints it — an
 Then, through the jtakeit MCP server:
 
 1. The site exists since the build began (`site.id` in the state). If it does
-   not — a project started before this order — `create_site` now.
+   not — a project started before this order — `create_site` now, with the
+   currency.
 2. `validate_catalogue` with `jtk/catalogue.json` and the `jtk/` files — the
    platform's judge, before the push.
 3. The repository, private, under the developer's account or organisation —
@@ -608,8 +612,8 @@ the pitch is the whole page, and those are different jobs.
 - [ ] where booking is shown: `zone` and `hours` set, and `preflight` with
       `try_booking` passed — a failed check is a failure, not a tool error
 
-- [ ] `create_site`, the dev server and `open_dev_session` before the first line,
-      and the localhost address given to the developer
+- [ ] `create_site` with the currency, the dev server and `open_dev_session`
+      before the first line, and the localhost address given to the developer
 - [ ] one page, built from the portrait, recognisably theirs
 - [ ] the page sells between the hero and the form — at least two angles chosen
       from the catalogue, each doing a different job, all of them drawn from the

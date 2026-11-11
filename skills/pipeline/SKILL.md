@@ -184,10 +184,10 @@ except `state.json`: the scrape and the photographs are working material and
 stay on the developer's machine.
 
 Nothing reaches outside the machine. The next steps are printed, in the
-platform's order: `create_site`, the dev server and `open_dev_session`, the
-GitHub repository (`gh repo create <owner>/<slug> --private --source . --push`,
-asked of the developer first, because it puts a business's name on their
-account), and the GitHub App on it.
+platform's order: `create_site` with the currency, the dev server and
+`open_dev_session`, the GitHub repository (`gh repo create <owner>/<slug>
+--private --source . --push`, asked of the developer first, because it puts a
+business's name on their account), and the GitHub App on it.
 
 For the outbound track, where many speculative sites are made, tell the
 developer once to install the jtakeit GitHub App

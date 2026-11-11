@@ -188,7 +188,10 @@ console.log(`  variants ${variants}`);
 console.log('');
 console.log('Next, in order:');
 console.log(`  cd ${rel} && npm ci && npm run dev`);
-console.log(`  create_site (jtakeit MCP) with slug "${slug}" and the name — then: jt-state set site.id <id>`);
+console.log(
+  `  create_site (jtakeit MCP) with slug "${slug}", the name and ${track === 'outbound' ? 'the currency their prices are in (chf, eur, …)' : "the brief's currency"}` +
+    ' — then: jt-state set site.id <id>',
+);
 console.log('  open_dev_session with the dev server\'s address, so the developer sees the pages as they are written');
 console.log(`  gh repo create <owner>/${slug} --private --source . --push   — asked of the developer first, never assumed`);
 console.log('  the jtakeit GitHub App on that repository (https://github.com/apps/jtakeit-connect) — a person installs it');
