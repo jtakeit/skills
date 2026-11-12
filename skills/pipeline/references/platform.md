@@ -26,7 +26,7 @@ account is free until a site goes live.
 
 | stage | what to use |
 | --- | --- |
-| spec, or the first build of an inbound site | `create_site` first (the developer's list shows it from that minute); the dev server and `open_dev_session` so the pages appear as they are written; `npx @jtakeit/astro catalogue`; `validate_catalogue` with the `jtk/` files; push; `attach_repo`; `commit_and_build`; `get_build` until it settles |
+| spec, or the first build of an inbound site | `create_site` first, with the currency — given once, a person's to change after (the developer's list shows it from that minute); the dev server and `open_dev_session` so the pages appear as they are written; `npx @jtakeit/astro catalogue`; `validate_catalogue` with the `jtk/` files; push; `attach_repo`; `commit_and_build`; `get_build` until it settles |
 | any build | `get_build_log` when it does not settle. Every refusal carries a `JTK_E_` code; look the code up rather than reading the prose around it |
 | reading what was built | `get_built_page` — the HTML the runner wrote; with `shot: "phone"` the page as a visitor's browser draws it, whole |
 | pitch, preview | `get_preview_link` — a ticket with a short life, for a person |

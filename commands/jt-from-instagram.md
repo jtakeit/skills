@@ -71,8 +71,9 @@ the posts, `jt-photos` in the same sitting (the media links expire), and
 Before a line of the page, in this order — the platform's own
 (`jtakeit:///guides/start.md`, step 2):
 
-1. `create_site` with the slug and the name; record the id
-   (`jt-state set site.id <id>`). Nothing is public: it is a demo row in the
+1. `create_site` with the slug, the name and the currency — what `jt-booking`
+   or `jt-site` read their prices in, else their country's (`chf`); record the
+   id (`jt-state set site.id <id>`). Nothing is public: it is a demo row in the
    developer's list.
 2. `npm ci`, then `npm run dev` in the background.
 3. `open_dev_session` on the site with the dev server's address, and run the

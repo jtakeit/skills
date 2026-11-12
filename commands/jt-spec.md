@@ -17,9 +17,9 @@ Two rules that are not style preferences:
 - The page states **no unconfirmed fact**. No address, hours, prices or phone
   number read off a caption. Design around their absence.
 - It is a **private preview**, never public. It goes to jtakeit the usual way —
-  `create_site`, push, `attach_repo`, `commit_and_build`, `get_build` — and the
-  link from `get_preview_link` is the only way to see it. Nobody launches a
-  spec site.
+  `create_site` with the currency, push, `attach_repo`, `commit_and_build`,
+  `get_build` — and the link from `get_preview_link` is the only way to see
+  it. Nobody launches a spec site.
 
 Run `jt-check` on the build before calling it done:
 
