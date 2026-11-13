@@ -12,7 +12,12 @@ not variants, because there is no client yet to choose between them. Ask once
 which pages beside the landing (the team, the price list, the work, a journal),
 recommending from what the portrait found.
 
-Two rules that are not style preferences:
+Three rules that are not style preferences:
+
+- The design is **redone**, always. The scaffold is an example in the design
+  system of Brumy (brumy.ch), jtakeit's maker; a spec is a pitch to a business
+  with a look of its own, so neither Brumy's palette and type nor any of the
+  example's words or photographs survive into it. `jt-check` fails on either.
 
 - The page states **no unconfirmed fact**. No address, hours, prices or phone
   number read off a caption. Design around their absence.

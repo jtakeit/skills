@@ -38,6 +38,7 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { extname, dirname, join, resolve } from 'node:path';
@@ -475,6 +476,115 @@ if (speculative && html) {
           'Take the voice, write the text; quote deliberately, in a <blockquote>.',
       );
     else pass('copy', 'nothing lifted whole from the captions');
+  }
+}
+
+/**
+ * The example's words and photographs, left on the site.
+ *
+ * `npx @jtakeit/astro create` lays out an example site in the design system of
+ * Brumy (brumy.ch), jtakeit's maker, with example words and photographs in the
+ * business's own name (jtakeit-core wiki/110). They are there to be replaced.
+ * A spec build states nothing nobody confirmed, so on one every example word
+ * and picture is a failure; on a client's site it is said, because the
+ * developer may keep a line of it — the platform's own advice
+ * (`JTK_W_EXAMPLE_LEFT`) never refuses either.
+ *
+ * Read off the content files (contract 3: jtk/pages, jtk/entries,
+ * jtk/shared.json and their translations), against the fingerprints the kit
+ * ships with its example: every hex digest in its `example/prints.json`, the
+ * SHA-256 of each example string after normalisation, and the hash every
+ * example photograph's library key is named by. A kit from before the example
+ * ships no prints; then there is nothing to compare against, and it is said.
+ */
+{
+  const printsPath = [
+    join(root, 'node_modules', '@jtakeit', 'astro', 'example', 'prints.json'),
+    join(root, 'node_modules', '@jtakeit', 'astro', 'template', 'example', 'prints.json'),
+  ].find((one) => existsSync(one));
+
+  const files = [];
+  const walk = (dir) => {
+    if (!existsSync(dir)) return;
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (name.endsWith('.json')) files.push(full);
+    }
+  };
+  walk(join(root, 'jtk', 'pages'));
+  walk(join(root, 'jtk', 'entries'));
+  if (existsSync(join(root, 'jtk'))) {
+    for (const name of readdirSync(join(root, 'jtk'))) if (/^shared(\.[\w-]+)?\.json$/.test(name)) files.push(join(root, 'jtk', name));
+  }
+
+  if (!files.length) {
+    // A contract-2 tree, or no content yet: the example is contract 3's.
+  } else if (!printsPath) {
+    note('example left', "this @jtakeit/astro ships no example prints — nothing to compare the words against; read the page for the scaffold's words by eye");
+  } else {
+    const prints = new Set();
+    const collectPrints = (node) => {
+      if (Array.isArray(node)) return node.forEach(collectPrints);
+      if (typeof node === 'string') {
+        for (const hex of node.toLowerCase().match(/\b[0-9a-f]{16}(?:[0-9a-f]{48})?\b/g) ?? []) prints.add(hex);
+        return;
+      }
+      if (node && typeof node === 'object') for (const [k, v] of Object.entries(node)) (collectPrints(k), collectPrints(v));
+    };
+    try {
+      collectPrints(JSON.parse(readFileSync(printsPath, 'utf8')));
+    } catch {
+      prints.clear();
+    }
+    const photoPrints = new Set([...prints].map((hex) => hex.slice(0, 16)));
+    const norm = (t) => t.normalize('NFC').replace(/\s+/g, ' ').trim();
+    const digest = (t) => createHash('sha256').update(t, 'utf8').digest('hex');
+
+    const words = new Map(); // file → count
+    const photos = new Map();
+    for (const file of files) {
+      let doc;
+      try {
+        doc = JSON.parse(readFileSync(file, 'utf8'));
+      } catch {
+        continue;
+      }
+      const rel = file.slice(root.length + 1);
+      const visit = (node, key) => {
+        if (Array.isArray(node)) return node.forEach((v) => visit(v, key));
+        if (node && typeof node === 'object') {
+          for (const [k, v] of Object.entries(node)) visit(v, k);
+          return;
+        }
+        if (typeof node !== 'string' || key === '_key' || key === 'id' || key === 'of') return;
+        const photo = node.match(/media\/[^/\s]+\/([0-9a-f]{16})\.[a-z0-9]+/i);
+        if (photo && photoPrints.has(photo[1].toLowerCase())) {
+          photos.set(rel, (photos.get(rel) ?? 0) + 1);
+          return;
+        }
+        const whole = norm(node);
+        if (!whole) return;
+        // A markdown body is printed per paragraph.
+        const parts = [whole, ...node.split(/\n\s*\n/).map(norm).filter(Boolean)];
+        if (parts.some((part) => prints.has(digest(part)))) words.set(rel, (words.get(rel) ?? 0) + 1);
+      };
+      visit(doc, '');
+    }
+
+    const count = (m) => [...m.values()].reduce((a, b) => a + b, 0);
+    const where = [...new Set([...words.keys(), ...photos.keys()])];
+    if (!prints.size) note('example left', `${printsPath} holds no prints`);
+    else if (!where.length) pass('example left', "none of the example's words or photographs are left");
+    else {
+      const detail =
+        `the example's words in ${count(words)} place(s) and ${count(photos)} of its photograph(s), in ` +
+        `${where.slice(0, 4).join(', ')}${where.length > 4 ? ` and ${where.length - 4} more` : ''} — ` +
+        "write the business's own, put its photographs in their place, or take the section out";
+      speculative
+        ? fail('example left', `${detail}; a spec states nothing nobody confirmed`)
+        : note('example left', `${detail}, or say to the developer which lines are kept`);
+    }
   }
 }
 
@@ -1543,8 +1653,10 @@ section('surface', async () => {
  * deliberate from inside the project it was built in.
  */
 const blockSequence = (() => {
-  const file = join(root, 'jtk', 'content', 'index.json');
-  if (!existsSync(file)) return null;
+  const file = [join(root, 'jtk', 'pages', 'index.json'), join(root, 'jtk', 'content', 'index.json')].find((one) =>
+    existsSync(one),
+  );
+  if (!file) return null;
   try {
     const doc = JSON.parse(readFileSync(file, 'utf8'));
     return (doc.blocks ?? []).map((b) => b.type);
@@ -1615,6 +1727,14 @@ section('shape', async () => {
         accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() === '#2f5bff',
         font: /^system-ui/.test(getComputedStyle(document.body).fontFamily),
       },
+      // Or as the example lays it out (jtakeit-core wiki/110): Brumy's design
+      // system — the ember accent, Space Grotesk over Inter.
+      brumy: {
+        accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim().toLowerCase() === '#e2431f',
+        type:
+          /space grotesk/i.test(getComputedStyle(document.querySelector('h1, h2') ?? document.body).fontFamily) &&
+          /^["']?inter\b/i.test(getComputedStyle(document.body).fontFamily),
+      },
     };
   });
   await page.close();
@@ -1628,6 +1748,28 @@ section('shape', async () => {
     scaffolded.length
       ? fail('still the scaffold', `${scaffolded.join('; ')} — the default look is not a direction somebody chose`)
       : pass('still the scaffold', 'palette and type were chosen for this project');
+
+    /*
+     * The example's look is Brumy's (brumy.ch), jtakeit's maker. It may be
+     * kept — on the developer's word, recorded as `design.look: brumy (kept:
+     * <who, when>)` — and is otherwise adapted: the tokens and the fonts at
+     * least. A spec build is in the business's own look, always.
+     */
+    const brumy = [
+      shape.brumy.accent ? "--accent is Brumy's ember (#e2431f)" : '',
+      shape.brumy.type ? "the type is Brumy's, Space Grotesk over Inter" : '',
+    ].filter(Boolean);
+    const kept = /^brumy \(kept/i.test(String(state?.design?.look ?? ''));
+    if (!brumy.length) pass("brumy's look", "not Brumy's palette or type");
+    else if (speculative)
+      fail("brumy's look", `${brumy.join('; ')} — a spec is in the business's own look, never the example's`);
+    else if (kept) pass("brumy's look", `kept on the developer's word — ${state.design.look}`);
+    else
+      fail(
+        "brumy's look",
+        `${brumy.join('; ')} — the example's design system is Brumy's: adapt it (the tokens and the fonts at least), ` +
+          'or record the developer\'s word to keep it: jt-state set design.look "brumy (kept: <who, when>)"',
+      );
 
     note(
       'shape',

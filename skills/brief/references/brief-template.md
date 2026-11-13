@@ -136,6 +136,9 @@ Who writes it. If the client supplies it, what we are allowed to change.
 
 - Variants: <n>
 - Locale: <tag>, one language unless stated
+- Design: the example's look (Brumy's) adapted or redone — or kept, on <who>'s
+  word, <date>
+- Sections kept from the example, in order; the ones taken out; the modules added
 - Anything taken out of the bookings kit, with what the visitor loses by it
 - Anything the client explicitly declined
 
@@ -145,5 +148,9 @@ A flat list, so the launch has somewhere to start.
 
 ## Done when
 
-<The scaffold's task list, kept true: tick each line when it is.>
+<The scaffold's task list, kept true: tick each line when it is. Where the
+scaffold did not seed them, add:
+- [ ] the design: adapted, or the developer said to keep the example's look
+- [ ] nothing of the example's words or photographs left, or each one kept by
+      the developer's say>
 ```

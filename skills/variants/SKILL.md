@@ -21,13 +21,40 @@ hero field, surfaces, shapes, CSS — is in `node_modules/@jtakeit/astro/docs/`
 once the project is installed (`kit.md` first), and at
 <https://github.com/jtakeit/jtakeit-kit>. Read it; this skill does not repeat it.
 
+## The scaffold is Brumy's look: adapt it by default
+
+`npx @jtakeit/astro create` lays the site out in the design system of Brumy
+(brumy.ch), jtakeit's maker — as an example. Its palette, its type and its
+materials are Brumy's; its words and photographs are the example's. Neither is
+this business's, and a variant is a direction somebody chose *for* it.
+
+- **Every variant adapts the design.** It starts from the example and replaces
+  the tokens (`src/styles/tokens.css` where the kit has one, else the custom
+  properties on `:root` in `global.css`, and `jtk/design.json`'s `paper`, `ink`
+  and `accent`) and the fonts **at least**: a palette and a type pairing from
+  `BRIEF.md`'s colour and material, not Brumy's ember and Space Grotesk. A
+  deeper direction replaces section components too. `count: 1` is still one
+  adapted direction, never the untouched example.
+- **Keeping the Brumy look is the developer's word, not a default.** Only when
+  they say so explicitly — and having been told whose design it is — and then
+  recorded: `jt-state set design.look "brumy (kept: <who, when>)"`. Otherwise
+  record the direction: `jt-state set design.look "<name>: <palette>, <type>"`.
+  `jt-check` fails a page still in Brumy's palette or type unless that line is
+  in the state.
+- **No example word or photograph reaches the client's preview** unless the
+  developer kept that line on purpose: every sentence, name, price-list line
+  and picture of the example is replaced with the business's own, or its
+  section is taken out. `jt-check`'s *example left* names what is still there.
+
 ## Shared spine, separate skins
 
 Everything factual is shared. Everything expressive is per variant.
 
 ```
 src/data/site.ts          the business's facts               shared
-jtk/content/*.json        the words the owner edits          shared
+jtk/pages/*.json          the words the owner edits          shared
+jtk/entries/**            the collections' entries           shared
+jtk/shared.json           the text on every page             shared
 src/copy/<locale>.ts      the home page's vocabulary         shared
 src/content/blocks.ts     what the owner may edit            shared
 src/lib/photos.ts         slot → file registry               shared
@@ -277,6 +304,11 @@ and the next person to see these is paying.
 ## Exit checklist
 
 - [ ] N variants, each a distinct direction, each complete top to bottom
+- [ ] each one adapted from the example — its own tokens and fonts at least —
+      or the Brumy look kept on the developer's explicit word, recorded as
+      `design.look: brumy (kept: <who, when>)`
+- [ ] none of the example's words or photographs left, or each one kept by the
+      developer's say (`jt-check` → *example left*)
 - [ ] the same content and the same facts in all of them
 - [ ] the spine sells between hero and form — at least two angles, chosen from
       the catalogue for this client's material, recorded in `design.angles`, and

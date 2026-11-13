@@ -152,7 +152,19 @@ if (!existsSync(join(target, 'package.json'))) {
 
 // --- the state ---------------------------------------------------------------
 
-const state = emptyState({ slug, name, locale, vertical, package: pkg, variants, track, handle: handle || null, kit });
+const state = emptyState({
+  slug,
+  name,
+  locale,
+  vertical,
+  package: pkg,
+  variants,
+  track,
+  handle: handle || null,
+  kit,
+  // The scaffold's example is in Brumy's design system (jtakeit-core wiki/110).
+  look: 'brumy',
+});
 writeState(target, state);
 
 // The scaffold made the first commit; the state is the second. `.jtakeit/`
@@ -186,6 +198,13 @@ console.log(`  package  ${pkg}${kit ? ` (kit ${kit})` : ''}`);
 console.log(`  locale   ${locale}`);
 console.log(`  variants ${variants}`);
 console.log('');
+console.log('Say to the developer: the site is laid out in the design system of Brumy (brumy.ch), jtakeit\'s maker,');
+console.log(
+  track === 'outbound'
+    ? '  as an example. A spec is redone in the business\'s own look, and none of the example\'s words or photographs stay.'
+    : '  as an example. It may be kept; the recommendation is to adapt or redo the design for this business.',
+);
+console.log('');
 console.log('Next, in order:');
 console.log(`  cd ${rel} && npm ci && npm run dev`);
 console.log(
@@ -198,5 +217,5 @@ console.log('  the jtakeit GitHub App on that repository (https://github.com/app
 console.log(
   track === 'outbound'
     ? '\nThen load jtakeit-sites:prospect.'
-    : '\nThen load jtakeit-sites:brief and fill BRIEF.md.',
+    : '\nThen load jtakeit-sites:brief and fill BRIEF.md. After the yes, take out the example\'s sections the brief does not name.',
 );

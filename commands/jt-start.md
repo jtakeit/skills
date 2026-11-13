@@ -37,4 +37,15 @@ dev server and `open_dev_session`, then the GitHub repository — `gh repo creat
 <owner>/<slug> --private --source . --push`, asked of the developer before it
 is run — and the jtakeit GitHub App on it, which a person installs.
 
-Then run the brief per `jtakeit-sites:brief`.
+Say to the developer, in these words or near them: the site is laid out in the
+design system of Brumy (brumy.ch), jtakeit's maker, as an example; it may be
+kept, and the recommendation is to adapt or redo the design for this business.
+
+Then run the brief per `jtakeit-sites:brief`. After the developer's yes, take
+out every section of the example the brief does not name and add the modules it
+does — `npx @jtakeit/astro remove <section>` and `add <module>` where the kit
+has them (`npx @jtakeit/astro --help` lists them), otherwise by hand as the
+brief skill's *After the yes* says — and record it: `jt-state set
+design.sections "<kept, in order>"`, and `design.look` (`brumy` until a
+direction replaces it; `"brumy (kept: <who, when>)"` only on the developer's
+explicit word).
