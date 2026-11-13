@@ -124,10 +124,10 @@ the nearest one by walking up, and the walk stops at a repository boundary —
 | Stage | Skill | Ends when |
 | --- | --- | --- |
 | prospect *(outbound)* | `jtakeit-sites:prospect` | `PORTRAIT.md` is written from the scrape, every claim carrying its source |
-| spec *(outbound)* | `jtakeit-sites:spec` | one site that is recognisably theirs, states no unconfirmed fact, passes `jt-check`, and is built on jtakeit as a private preview |
+| spec *(outbound)* | `jtakeit-sites:spec` | one site that is recognisably theirs — its design redone, none of the scaffold's example left — states no unconfirmed fact, passes `jt-check`, and is built on jtakeit as a private preview |
 | pitch *(outbound)* | `jtakeit-sites:pitch` | the video of the preview is recorded, watched, and with the person who will send it |
-| brief | `jtakeit-sites:brief` | `BRIEF.md` is approved by the developer and the facts are in `src/data/site.ts` |
-| variants | `jtakeit-sites:variants` | N clickable variants build clean, pass `jt-check`, and read correctly on all three viewports |
+| brief | `jtakeit-sites:brief` | `BRIEF.md` is approved by the developer, the facts are in `src/data/site.ts`, and the example's sections it does not name are taken out |
+| variants | `jtakeit-sites:variants` | N clickable variants, each adapted from the example (Brumy's look kept only on the developer's word), build clean, pass `jt-check`, and read correctly on all three viewports — and the example is cleared: none of its words or photographs left unless kept on purpose |
 | preview | `jtakeit-sites:preview` | the build has settled on jtakeit and a preview link has been sent to the client |
 | revisions | `jtakeit-sites:revisions` | every item of the client's review is either done or explicitly declined in writing |
 | launch | `jtakeit-sites:launch` | `preflight` passes for everything that is the agent's, and a person has launched in the panel — or handed the site over |

@@ -243,6 +243,15 @@ export function emptyState(fields = {}) {
      * one was.
      */
     design: {
+      /**
+       * Whose look the site is in. `jtk create` lays out the example in the
+       * design system of Brumy (brumy.ch), jtakeit's maker: `brumy` until a
+       * direction replaces it, `brumy (kept: <who, when>)` only on the
+       * developer's explicit word, else the direction's name.
+       */
+      look: fields.look ?? null,
+      /** The example's sections the brief kept, in order (jtk remove the rest). */
+      sections: fields.sections ?? null,
       hero: fields.hero ?? null,
       form: fields.form ?? null,
       type: fields.type ?? null,
@@ -385,6 +394,7 @@ export function renderStatus(state) {
         .filter(Boolean)
         .join(' · ') || '— not chosen',
     ],
+    ['Look', state.design?.look ?? '—'],
     ['Angles', state.design?.angles ?? '— not chosen'],
     ...(state.design?.signature ? [['Signature', state.design.signature]] : []),
     ['Skills', state.skills?.commit ? `${state.skills.version} @ ${state.skills.commit}` : state.skills?.version || '—'],

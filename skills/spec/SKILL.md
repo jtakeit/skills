@@ -24,6 +24,32 @@ design), `gallery.md`'s table, then by question — `photos.md` for the shots,
 `pages.md` and `collections.md` for the pages asked for, `booking.md` where it
 books. Everything read stays in the conversation and slows every step after it.
 
+## Redo the design: the scaffold is Brumy's example
+
+`npx @jtakeit/astro create` lays the site out in the design system of Brumy
+(brumy.ch), jtakeit's maker, as an example — Brumy's palette, type and glass,
+with example words and photographs in the business's name. On the inbound
+track a developer may keep that look; **a spec never does.** It is a pitch to a
+business that has a look of its own, and a stranger's design on their name is
+the opposite of «theirs within three seconds».
+
+- **The design is redone, not adapted from the example**: the tokens, the
+  fonts, the sections' shape — all chosen below from the portrait. Record it:
+  `jt-state set design.look "<name>: <palette>, <type>"`.
+- **Every example word and photograph goes** before the pitch is recorded —
+  the spec «never states an unconfirmed fact», and an example sentence,
+  name, price or picture is exactly that. Write theirs, or take the section
+  out.
+- **Testimonials go** unless the portrait holds real ones with their source.
+- **Sections the spec does not use come out** — their block in
+  `jtk/pages/*.json` and its keys in every translation, the block type in
+  `src/content/blocks.ts` when nothing else uses it, the component, the
+  header's link to it. Where the kit has `npx @jtakeit/astro remove <section>`
+  (`npx @jtakeit/astro --help` lists it), that one command does all of it.
+- `jt-check` holds both: *brumy's look* and *example left* fail on a spec
+  build. Where the platform's `preflight` says how much of the example is
+  left, its line reads «none left» before the pitch.
+
 ## One direction, not three
 
 Stage 1 of the inbound track builds N variants because a paying client chooses.
@@ -653,6 +679,9 @@ the pitch is the whole page, and those are different jobs.
 - [ ] **no unconfirmed fact anywhere on the page** — no address, hours, prices,
       phone — and none in `BUSINESS`, so none in the JSON-LD
 - [ ] no invented testimonials, ratings, or claims of results
+- [ ] the design redone from the portrait, not Brumy's (`jt-check` → *brumy's
+      look*), and none of the example's words or photographs left (`jt-check` →
+      *example left*; `preflight`'s example line, where it has one, «none left»)
 - [ ] no booking diary on the spec build
 - [ ] `npm run check` clean, `npm run build` clean
 - [ ] `jt-check --dist ./dist` at zero failures — the composition floor and the

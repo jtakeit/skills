@@ -38,6 +38,7 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { extname, dirname, join, resolve } from 'node:path';
@@ -475,6 +476,152 @@ if (speculative && html) {
           'Take the voice, write the text; quote deliberately, in a <blockquote>.',
       );
     else pass('copy', 'nothing lifted whole from the captions');
+  }
+}
+
+/**
+ * The example's words and photographs, left on the site.
+ *
+ * `npx @jtakeit/astro create` lays out an example site in the design system of
+ * Brumy (brumy.ch), jtakeit's maker, with example words and photographs in the
+ * business's own name (jtakeit-core wiki/110). They are there to be replaced.
+ * A spec build states nothing nobody confirmed, so on one every example word
+ * and picture is a failure; on a client's site it is said, because the
+ * developer may keep a line of it — the platform's own advice
+ * (`JTK_W_EXAMPLE_LEFT`) never refuses either.
+ *
+ * Read off the content files (contract 3: jtk/pages, jtk/entries,
+ * jtk/shared.json and their translations) against the fingerprints the kit
+ * ships, `example/prints.json`:
+ *
+ *   words   {<locale>: [sha256…]} — lowercase hex of the text after Unicode
+ *           NFC, every run of whitespace one space, the ends trimmed, case
+ *           kept; a text of several lines also line by line, a markdown body
+ *           also paragraph by paragraph. Single words, labels, links and
+ *           anything holding the business's name are not printed, so they
+ *           never match here either.
+ *   photos  [{name, slot, sha256, hash16, key}] — a site names a picture by
+ *           its slot today (`example-hero`, the file
+ *           `src/assets/example-hero.jpg`), and by a library key
+ *           (`media/<site>/<hash16>.jpg`) once the media push exists. A slot
+ *           counts while its file's bytes are still the example's (or the
+ *           file is gone); a slot whose file was replaced is the business's.
+ *           A key counts by its hash16.
+ *
+ * A kit from before the example ships no prints; then there is nothing to
+ * compare against, and it is said.
+ */
+{
+  const printsPath = join(root, 'node_modules', '@jtakeit', 'astro', 'example', 'prints.json');
+
+  const files = [];
+  const walk = (dir, keep) => {
+    if (!existsSync(dir)) return;
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full, keep);
+      else if (keep(name)) files.push(full);
+    }
+  };
+  const isJson = (name) => name.endsWith('.json');
+  walk(join(root, 'jtk', 'pages'), isJson);
+  walk(join(root, 'jtk', 'entries'), isJson);
+  if (existsSync(join(root, 'jtk'))) {
+    for (const name of readdirSync(join(root, 'jtk'))) if (/^shared(\.[\w-]+)?\.json$/.test(name)) files.push(join(root, 'jtk', name));
+  }
+
+  let prints = null;
+  try {
+    prints = existsSync(printsPath) ? JSON.parse(readFileSync(printsPath, 'utf8')) : null;
+  } catch {
+    prints = null;
+  }
+
+  if (!files.length) {
+    // A contract-2 tree, or no content yet: the example is contract 3's.
+  } else if (!prints) {
+    note('example left', "this @jtakeit/astro ships no example prints — nothing to compare the words against; read the page for the scaffold's words by eye");
+  } else {
+    const wordPrints = new Set(
+      Object.values(prints.words ?? {})
+        .flat()
+        .map((hex) => String(hex).toLowerCase()),
+    );
+    const photoList = Array.isArray(prints.photos) ? prints.photos : [];
+    const exampleSha = new Set(photoList.map((p) => String(p.sha256 ?? '').toLowerCase()).filter(Boolean));
+    const exampleHash16 = new Set(
+      photoList.map((p) => String(p.hash16 ?? p.sha256 ?? '').slice(0, 16).toLowerCase()).filter(Boolean),
+    );
+    const exampleSlots = new Set(photoList.map((p) => p.slot).filter(Boolean));
+
+    const digest = (t) => createHash('sha256').update(t, 'utf8').digest('hex');
+    const norm = (t) => t.normalize('NFC').replace(/\s+/g, ' ').trim();
+
+    // The site's own pictures by slot: src/assets/<slot>.<ext> → its bytes' sha256.
+    const assetSha = new Map();
+    {
+      const images = [];
+      const before = files.length;
+      walk(join(root, 'src', 'assets'), (name) => /\.(jpe?g|png|webp|avif|gif)$/i.test(name));
+      images.push(...files.splice(before));
+      for (const file of images) {
+        const slot = file.split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
+        try {
+          assetSha.set(slot, createHash('sha256').update(readFileSync(file)).digest('hex'));
+        } catch {}
+      }
+    }
+    const isExamplePhoto = (value) => {
+      const key = value.match(/media\/[^/\s]+\/([0-9a-f]{16})\.[a-z0-9]+/i);
+      if (key) return exampleHash16.has(key[1].toLowerCase());
+      if (assetSha.has(value)) return exampleSha.has(assetSha.get(value));
+      return exampleSlots.has(value);
+    };
+
+    const words = new Map(); // file → count
+    const photos = new Map();
+    for (const file of files) {
+      let doc;
+      try {
+        doc = JSON.parse(readFileSync(file, 'utf8'));
+      } catch {
+        continue;
+      }
+      const rel = file.slice(root.length + 1);
+      const visit = (node, key) => {
+        if (Array.isArray(node)) return node.forEach((v) => visit(v, key));
+        if (node && typeof node === 'object') {
+          for (const [k, v] of Object.entries(node)) visit(v, k);
+          return;
+        }
+        if (typeof node !== 'string' || key === '_key' || key === 'id' || key === 'of') return;
+        if (isExamplePhoto(node.trim())) {
+          photos.set(rel, (photos.get(rel) ?? 0) + 1);
+          return;
+        }
+        const whole = norm(node);
+        if (!whole) return;
+        // Whole, line by line, and a markdown body paragraph by paragraph.
+        const parts = new Set([whole, ...node.split(/\n/).map(norm), ...node.split(/\n\s*\n/).map(norm)]);
+        parts.delete('');
+        if ([...parts].some((part) => wordPrints.has(digest(part)))) words.set(rel, (words.get(rel) ?? 0) + 1);
+      };
+      visit(doc, '');
+    }
+
+    const count = (m) => [...m.values()].reduce((a, b) => a + b, 0);
+    const where = [...new Set([...words.keys(), ...photos.keys()])];
+    if (!wordPrints.size && !photoList.length) note('example left', `${printsPath} holds no prints`);
+    else if (!where.length) pass('example left', "none of the example's words or photographs are left");
+    else {
+      const detail =
+        `the example's words in ${count(words)} place(s) and ${count(photos)} of its photograph(s), in ` +
+        `${where.slice(0, 4).join(', ')}${where.length > 4 ? ` and ${where.length - 4} more` : ''} — ` +
+        "write the business's own, put its photographs in their place, or take the section out";
+      speculative
+        ? fail('example left', `${detail}; a spec states nothing nobody confirmed`)
+        : note('example left', `${detail}, or say to the developer which lines are kept`);
+    }
   }
 }
 
@@ -1543,8 +1690,10 @@ section('surface', async () => {
  * deliberate from inside the project it was built in.
  */
 const blockSequence = (() => {
-  const file = join(root, 'jtk', 'content', 'index.json');
-  if (!existsSync(file)) return null;
+  const file = [join(root, 'jtk', 'pages', 'index.json'), join(root, 'jtk', 'content', 'index.json')].find((one) =>
+    existsSync(one),
+  );
+  if (!file) return null;
   try {
     const doc = JSON.parse(readFileSync(file, 'utf8'));
     return (doc.blocks ?? []).map((b) => b.type);
@@ -1615,6 +1764,14 @@ section('shape', async () => {
         accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() === '#2f5bff',
         font: /^system-ui/.test(getComputedStyle(document.body).fontFamily),
       },
+      // Or as the example lays it out (jtakeit-core wiki/110): Brumy's design
+      // system — the ember accent, Space Grotesk over Inter.
+      brumy: {
+        accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim().toLowerCase() === '#e2431f',
+        type:
+          /space grotesk/i.test(getComputedStyle(document.querySelector('h1, h2') ?? document.body).fontFamily) &&
+          /^["']?inter\b/i.test(getComputedStyle(document.body).fontFamily),
+      },
     };
   });
   await page.close();
@@ -1628,6 +1785,28 @@ section('shape', async () => {
     scaffolded.length
       ? fail('still the scaffold', `${scaffolded.join('; ')} — the default look is not a direction somebody chose`)
       : pass('still the scaffold', 'palette and type were chosen for this project');
+
+    /*
+     * The example's look is Brumy's (brumy.ch), jtakeit's maker. It may be
+     * kept — on the developer's word, recorded as `design.look: brumy (kept:
+     * <who, when>)` — and is otherwise adapted: the tokens and the fonts at
+     * least. A spec build is in the business's own look, always.
+     */
+    const brumy = [
+      shape.brumy.accent ? "--accent is Brumy's ember (#e2431f)" : '',
+      shape.brumy.type ? "the type is Brumy's, Space Grotesk over Inter" : '',
+    ].filter(Boolean);
+    const kept = /^brumy \(kept/i.test(String(state?.design?.look ?? ''));
+    if (!brumy.length) pass("brumy's look", "not Brumy's palette or type");
+    else if (speculative)
+      fail("brumy's look", `${brumy.join('; ')} — a spec is in the business's own look, never the example's`);
+    else if (kept) pass("brumy's look", `kept on the developer's word — ${state.design.look}`);
+    else
+      fail(
+        "brumy's look",
+        `${brumy.join('; ')} — the example's design system is Brumy's: adapt it (the tokens and the fonts at least), ` +
+          'or record the developer\'s word to keep it: jt-state set design.look "brumy (kept: <who, when>)"',
+      );
 
     note(
       'shape',

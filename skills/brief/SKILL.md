@@ -157,6 +157,15 @@ wrong guess is a refusal or a wrong page later:
   home screen and beside the site in search results, and nobody gives it unless
   asked. Until it comes the scaffold's stand-in is the business's initials;
   say that back, and `preflight` will keep saying it until the mark arrives.
+- **The design.** The scaffold is laid out in the design system of Brumy
+  (brumy.ch), jtakeit's maker, as an example. Say so, and ask whether the
+  business has a look of its own — its sign, its colours, a site it likes. Say
+  the example's look may be kept, and recommend adapting or redoing it for this
+  business; keeping it is the developer's explicit word, written under
+  *Decisions*. Then which of the example's sections the business needs —
+  values, gallery, services and prices, team, testimonials, questions, as the
+  scaffold has them — and which modules (a blog, bookings); the rest come out
+  after the yes (*After the yes*, below).
 - **The slug** — the site's name on the platform, so `create_site` can be the
   first call (below).
 - **Where the repository lives** — which GitHub account or organisation, and
@@ -227,6 +236,32 @@ As soon as the first answer gives the slug and the name — not after the last:
 `npx @jtakeit/astro create` writes `BRIEF.md` in the platform's shape. Fill
 that file — do not start a second one.
 
+When the localhost is up, say the one line about the design to the developer:
+the site is laid out in the design system of Brumy (brumy.ch), jtakeit's
+maker, as an example; it may be kept, and the recommendation is to adapt or
+redo it for this business.
+
+## After the yes: what the brief does not name comes out
+
+The scaffold lays out more than most sites need, so that a person sees what
+the platform can do. After the developer's yes, before the first push:
+
+- **Take out every section of the example the brief does not name**, and add
+  the modules it does. Where the kit has them (`npx @jtakeit/astro --help`
+  lists `remove` and `add`), one command each: `npx @jtakeit/astro remove
+  testimonials`, `npx @jtakeit/astro add blog`. Where it does not yet, by hand,
+  the same parts the command would touch: the block in `jtk/pages/*.json` and
+  its `_key`s in every translation beside it, the block type in
+  `src/content/blocks.ts` when no other block uses it, the section's component
+  where nothing else draws it, its link in the header's navigation (in
+  `jtk/shared.json` and its translations), and a collection's entries under
+  `jtk/entries/`; a blog is `--blog` at `create`, or the two lines at the foot
+  of `blocks.ts`. Then `npx @jtakeit/astro schema` and `validate_schema`.
+- **Record it:** `jt-state set design.sections "<the sections kept, in
+  order>"`, and `jt-state set design.look brumy` until a direction replaces it
+  (`jtakeit-sites:variants`) — or `"brumy (kept: <who, when>)"` on the
+  developer's explicit word to keep the example's look.
+
 ## The output
 
 **`BRIEF.md`** at the project root: the scaffold's file, filled, with the
@@ -275,6 +310,10 @@ cannot reach.
 - [ ] bookings: paid online or on the spot asked and answered; the kit taken
       whole, or each thing taken out under *Decisions*; every default said back
 - [ ] the mark in hand, or the monogram said back and accepted
+- [ ] the design asked: the example is Brumy's, said; adapting or redoing it
+      recommended; keeping it only on the developer's word, under *Decisions*
+- [ ] the example's sections the brief does not name taken out, the modules it
+      names added; `design.sections` and `design.look` in the state file
 - [ ] the GitHub App's installation asked for, from the person who can do it
 - [ ] `create_site` done, with the currency; the site's id in the state file;
       a dev session open
