@@ -491,55 +491,92 @@ if (speculative && html) {
  * (`JTK_W_EXAMPLE_LEFT`) never refuses either.
  *
  * Read off the content files (contract 3: jtk/pages, jtk/entries,
- * jtk/shared.json and their translations), against the fingerprints the kit
- * ships with its example: every hex digest in its `example/prints.json`, the
- * SHA-256 of each example string after normalisation, and the hash every
- * example photograph's library key is named by. A kit from before the example
- * ships no prints; then there is nothing to compare against, and it is said.
+ * jtk/shared.json and their translations) against the fingerprints the kit
+ * ships, `example/prints.json`:
+ *
+ *   words   {<locale>: [sha256…]} — lowercase hex of the text after Unicode
+ *           NFC, every run of whitespace one space, the ends trimmed, case
+ *           kept; a text of several lines also line by line, a markdown body
+ *           also paragraph by paragraph. Single words, labels, links and
+ *           anything holding the business's name are not printed, so they
+ *           never match here either.
+ *   photos  [{name, slot, sha256, hash16, key}] — a site names a picture by
+ *           its slot today (`example-hero`, the file
+ *           `src/assets/example-hero.jpg`), and by a library key
+ *           (`media/<site>/<hash16>.jpg`) once the media push exists. A slot
+ *           counts while its file's bytes are still the example's (or the
+ *           file is gone); a slot whose file was replaced is the business's.
+ *           A key counts by its hash16.
+ *
+ * A kit from before the example ships no prints; then there is nothing to
+ * compare against, and it is said.
  */
 {
-  const printsPath = [
-    join(root, 'node_modules', '@jtakeit', 'astro', 'example', 'prints.json'),
-    join(root, 'node_modules', '@jtakeit', 'astro', 'template', 'example', 'prints.json'),
-  ].find((one) => existsSync(one));
+  const printsPath = join(root, 'node_modules', '@jtakeit', 'astro', 'example', 'prints.json');
 
   const files = [];
-  const walk = (dir) => {
+  const walk = (dir, keep) => {
     if (!existsSync(dir)) return;
     for (const name of readdirSync(dir)) {
       const full = join(dir, name);
-      if (statSync(full).isDirectory()) walk(full);
-      else if (name.endsWith('.json')) files.push(full);
+      if (statSync(full).isDirectory()) walk(full, keep);
+      else if (keep(name)) files.push(full);
     }
   };
-  walk(join(root, 'jtk', 'pages'));
-  walk(join(root, 'jtk', 'entries'));
+  const isJson = (name) => name.endsWith('.json');
+  walk(join(root, 'jtk', 'pages'), isJson);
+  walk(join(root, 'jtk', 'entries'), isJson);
   if (existsSync(join(root, 'jtk'))) {
     for (const name of readdirSync(join(root, 'jtk'))) if (/^shared(\.[\w-]+)?\.json$/.test(name)) files.push(join(root, 'jtk', name));
   }
 
+  let prints = null;
+  try {
+    prints = existsSync(printsPath) ? JSON.parse(readFileSync(printsPath, 'utf8')) : null;
+  } catch {
+    prints = null;
+  }
+
   if (!files.length) {
     // A contract-2 tree, or no content yet: the example is contract 3's.
-  } else if (!printsPath) {
+  } else if (!prints) {
     note('example left', "this @jtakeit/astro ships no example prints — nothing to compare the words against; read the page for the scaffold's words by eye");
   } else {
-    const prints = new Set();
-    const collectPrints = (node) => {
-      if (Array.isArray(node)) return node.forEach(collectPrints);
-      if (typeof node === 'string') {
-        for (const hex of node.toLowerCase().match(/\b[0-9a-f]{16}(?:[0-9a-f]{48})?\b/g) ?? []) prints.add(hex);
-        return;
-      }
-      if (node && typeof node === 'object') for (const [k, v] of Object.entries(node)) (collectPrints(k), collectPrints(v));
-    };
-    try {
-      collectPrints(JSON.parse(readFileSync(printsPath, 'utf8')));
-    } catch {
-      prints.clear();
-    }
-    const photoPrints = new Set([...prints].map((hex) => hex.slice(0, 16)));
-    const norm = (t) => t.normalize('NFC').replace(/\s+/g, ' ').trim();
+    const wordPrints = new Set(
+      Object.values(prints.words ?? {})
+        .flat()
+        .map((hex) => String(hex).toLowerCase()),
+    );
+    const photoList = Array.isArray(prints.photos) ? prints.photos : [];
+    const exampleSha = new Set(photoList.map((p) => String(p.sha256 ?? '').toLowerCase()).filter(Boolean));
+    const exampleHash16 = new Set(
+      photoList.map((p) => String(p.hash16 ?? p.sha256 ?? '').slice(0, 16).toLowerCase()).filter(Boolean),
+    );
+    const exampleSlots = new Set(photoList.map((p) => p.slot).filter(Boolean));
+
     const digest = (t) => createHash('sha256').update(t, 'utf8').digest('hex');
+    const norm = (t) => t.normalize('NFC').replace(/\s+/g, ' ').trim();
+
+    // The site's own pictures by slot: src/assets/<slot>.<ext> → its bytes' sha256.
+    const assetSha = new Map();
+    {
+      const images = [];
+      const before = files.length;
+      walk(join(root, 'src', 'assets'), (name) => /\.(jpe?g|png|webp|avif|gif)$/i.test(name));
+      images.push(...files.splice(before));
+      for (const file of images) {
+        const slot = file.split(/[\\/]/).pop().replace(/\.[^.]+$/, '');
+        try {
+          assetSha.set(slot, createHash('sha256').update(readFileSync(file)).digest('hex'));
+        } catch {}
+      }
+    }
+    const isExamplePhoto = (value) => {
+      const key = value.match(/media\/[^/\s]+\/([0-9a-f]{16})\.[a-z0-9]+/i);
+      if (key) return exampleHash16.has(key[1].toLowerCase());
+      if (assetSha.has(value)) return exampleSha.has(assetSha.get(value));
+      return exampleSlots.has(value);
+    };
 
     const words = new Map(); // file → count
     const photos = new Map();
@@ -558,23 +595,23 @@ if (speculative && html) {
           return;
         }
         if (typeof node !== 'string' || key === '_key' || key === 'id' || key === 'of') return;
-        const photo = node.match(/media\/[^/\s]+\/([0-9a-f]{16})\.[a-z0-9]+/i);
-        if (photo && photoPrints.has(photo[1].toLowerCase())) {
+        if (isExamplePhoto(node.trim())) {
           photos.set(rel, (photos.get(rel) ?? 0) + 1);
           return;
         }
         const whole = norm(node);
         if (!whole) return;
-        // A markdown body is printed per paragraph.
-        const parts = [whole, ...node.split(/\n\s*\n/).map(norm).filter(Boolean)];
-        if (parts.some((part) => prints.has(digest(part)))) words.set(rel, (words.get(rel) ?? 0) + 1);
+        // Whole, line by line, and a markdown body paragraph by paragraph.
+        const parts = new Set([whole, ...node.split(/\n/).map(norm), ...node.split(/\n\s*\n/).map(norm)]);
+        parts.delete('');
+        if ([...parts].some((part) => wordPrints.has(digest(part)))) words.set(rel, (words.get(rel) ?? 0) + 1);
       };
       visit(doc, '');
     }
 
     const count = (m) => [...m.values()].reduce((a, b) => a + b, 0);
     const where = [...new Set([...words.keys(), ...photos.keys()])];
-    if (!prints.size) note('example left', `${printsPath} holds no prints`);
+    if (!wordPrints.size && !photoList.length) note('example left', `${printsPath} holds no prints`);
     else if (!where.length) pass('example left', "none of the example's words or photographs are left");
     else {
       const detail =
