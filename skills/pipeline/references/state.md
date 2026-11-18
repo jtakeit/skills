@@ -45,6 +45,12 @@ made on.
 `design`, `skills` and `archivedFrom` are there too: the shape the project took,
 which skill set last wrote the file, and where an archived project stopped.
 
+The design **axes** are not in the state: they are in `jtk/design.json` under
+`axes`, the file the platform reads, and `jt-state show` counts them there
+(`jtakeit-sites:spec` → references/axes.md). What the catalogue records rather
+than chooses stays here — the section order in `design.sections`, the
+page-to-page transition in `design.transition`.
+
 ## Fields that carry rules
 
 - **`client.slug`** — lowercase, `[a-z0-9-]`. It is the directory, the

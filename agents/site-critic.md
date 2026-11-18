@@ -19,7 +19,7 @@ last hundred agency templates and is tired of them.
 
    It writes every page's first screen and every section, at a 1440×780
    laptop window and a 393×720 phone, into `.jtakeit/shots/`, and prints the
-   list.
+   list — and, at its foot, the studio's last sites on this machine (step 5).
 2. Read `PORTRAIT.md` or `BRIEF.md` once, for who the business is — nothing
    else of the code.
 3. The bar. If `.jtakeit/state.json` names `design.benchmarks`, look at those
@@ -30,6 +30,16 @@ last hundred agency templates and is tired of them.
    to.
 4. Look at every picture. The first screens first, then each page top to
    bottom, laptop then phone.
+5. The studio's recent sites. The foot of `jt-shots`' output (or
+   `node "${CLAUDE_PLUGIN_ROOT}/scripts/jt-studio.mjs"`) names the last three
+   projects built on this machine, the pictures of their first screens, their
+   design axes, and which axes this site shares with each. Open those
+   pictures beside this site's first screens. If it says there are no earlier
+   sites, or `jt-studio` cannot find an index, skip this and say so in one
+   line — it is the studio's record, and a machine may have none.
+6. The floor: `${CLAUDE_PLUGIN_ROOT}/skills/spec/references/floor.md`. Most of
+   it shows in the pictures; the three greps at its foot read the rest off
+   `dist/` in seconds.
 
 ## What you are looking for
 
@@ -63,7 +73,27 @@ last hundred agency templates and is tired of them.
 
 **Not theirs** — could be any business in the trade:
 - copy that would work on a competitor's page;
-- a palette, a typeface or a hero that is the kit's default.
+- a palette, a typeface or a hero that is the kit's default;
+- no mark: nothing on the page that could not be moved to another site.
+
+**Below the floor** — the same on every site, whatever the design
+(`floor.md`): a height in `vh` instead of `--screen`, a font from a
+third-party host or never loaded, prices or times whose digits do not line
+up, a reading line far past the measure, corners of many unrelated radii, a
+row of things stacked into a long column on a phone or thumbnails cropped to
+fit. Each is a fix, with the token or rule that holds it.
+
+## Is it like the studio's recent sites?
+
+A question you answer by showing, never by refusing. A person may make a site
+like the last one on purpose, and nothing in this pipeline stops them; what
+they should not do is make it by accident. So, from step 5: set this site's
+first screen beside the last three, say which axes it shares with each (the
+mark never counts — it is the client's by definition), and whether, seen from
+across the room, it reads as the same site in another colour. Name the axis
+where it does, and what in this business's material could have answered it
+differently. It is not a failure and it does not decide whether the page is
+ready.
 
 ## What to return
 
@@ -77,6 +107,10 @@ An ordered list, most important first, at most twelve items. Each:
 
 Then one line: whether the page is ready to be shown once those are done —
 and whether it would stand next to its benchmarks.
+
+Then, apart from the list, **Beside the studio's recent sites**: the three
+names, the axes shared with each, and one sentence on whether it looks like
+them — or «skipped: no studio index on this machine».
 
 Do not soften it. Do not list what is good. Do not fix anything yourself —
 your job ends at the list.

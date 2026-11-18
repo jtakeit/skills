@@ -167,6 +167,35 @@ Scandinavian print shop, a black salon at night, and a Kreis 4 street poster.
 Three fonts of the same layout is not three variants; it is one variant and two
 wasted days.
 
+**Then per axis.** The studio's catalogue —
+`jtakeit-sites:spec` → [references/axes.md](../spec/references/axes.md) — lists
+thirteen axes every site decides (the hero, the ground, the measures, the
+shape, the header and its phone menu, the overlap, the surfaces, the mark,
+motion, the font pair, the hook, the proof, who answers), each variant we have
+built on them and the site it came from. Read it, and see what the studio built
+lately so a repeat is a decision rather than a habit:
+
+```bash
+node "$JT/scripts/jt-studio.mjs"     # the last three sites: their axes and hero shots
+```
+
+Each direction takes a variant per axis, chosen from the brief's material by
+the axis's own question — or a new variant where none answers it, recorded as
+the catalogue says. **The directions differ on several axes on purpose**: take
+any two of them and at least four of hero, ground, shape, header, overlap,
+motion, fonts and hook should be different, chosen so — a black salon at night
+is `dark-room` or `night`, not `light` with a darker accent. The mark is the
+client's in every direction; each may draw it its own way. Write each
+direction's axes on its line in `BRIEF.md` under *Decisions*, and the leading
+direction's into `jtk/design.json` under `axes` — fourteen keys, string values;
+when the client picks, the chosen one's replace them.
+
+Under every direction, the same floor — `jtakeit-sites:spec` →
+[references/floor.md](../spec/references/floor.md): `--screen`, fonts that do
+not jump, tabular figures on money and times, the reading and the object
+measures, one radius family, phones by rule. They are the kit's tokens and
+defaults, not a choice, and no direction is different by breaking one.
+
 Then, **for each variant separately**, design it. The `frontend-design` plugin
 is the recommended tool for this pass — invoke its skill once per variant, not
 once for all of them: a single design pass produces one point of view with three
@@ -304,6 +333,11 @@ and the next person to see these is paying.
 ## Exit checklist
 
 - [ ] N variants, each a distinct direction, each complete top to bottom
+- [ ] each direction's axes chosen from the catalogue (or new and recorded),
+      any two directions apart on at least four of the visible axes, written
+      in `BRIEF.md`; the leading — later the chosen — direction's in
+      `jtk/design.json` → `axes`, the mark among them
+- [ ] the floor held in every direction (`spec` → references/floor.md)
 - [ ] each one adapted from the example — its own tokens and fonts at least —
       or the Brumy look kept on the developer's explicit word, recorded as
       `design.look: brumy (kept: <who, when>)`

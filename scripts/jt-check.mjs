@@ -1909,7 +1909,10 @@ section('shape', async () => {
      * cannot see that the third spec in a row chose the deck again
      * (lewiscoiff after 8001 Barber and Schorem, 17 October 2026), so the
      * spec builds of this machine are kept in one list, beside /jt-setup's
-     * config, and the work's gallery may not repeat the last two.
+     * config, and a gallery repeating the last two is said. Said, not failed:
+     * a site is never refused for resembling another — the person decides
+     * what their site looks like, and the catalogue (references/axes.md) is
+     * there to choose from, not a gate (the owner, 18 November 2026).
      */
     if (speculative && !again) {
       const home = join(process.env.XDG_CONFIG_HOME || join(process.env.HOME || '', '.config'), 'jtakeit-sites');
@@ -1939,7 +1942,7 @@ section('shape', async () => {
       const others = history.filter((h) => h.root !== here).slice(-2);
       const gallery = (surfaceShape?.galleries ?? []).join(' ');
       if (gallery && others.length === 2 && others.every((h) => h.gallery === gallery))
-        fail('not the last builds again', `the work is a ${gallery} gallery, as in ${others.map((h) => h.name).join(' and ')} — choose the arrangement from this business's material (docs/gallery.md), not from habit`);
+        note('not the last builds again', `the work is a ${gallery} gallery, as in ${others.map((h) => h.name).join(' and ')} — choose the arrangement from this business's material (docs/gallery.md), not from habit`);
       else if (gallery) pass('not the last builds again', `${gallery}, after ${others.map((h) => `${h.name}: ${h.gallery || 'none'}`).join(', ') || 'no earlier build'}`);
       if (others.length === 2 && others.every((h) => h.hero === shape.heroAnatomy))
         note('not the last builds again', `the hero is ${shape.heroAnatomy} for the third build running`);

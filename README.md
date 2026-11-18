@@ -130,7 +130,10 @@ scripts/
               seconds; --again repeats only what failed
   jt-pitch    record the pitch video, phone and desktop
   jt-clips    cut a video into short silent loops
-  jt-shots    every page, section by section, at a laptop and a phone
+  jt-shots    every page, section by section, at a laptop and a phone —
+              and the first screens into the studio index on this machine
+  jt-studio   the studio's last sites, their design axes and first screens,
+              beside this one: shown, never enforced
   jt-refs     the sixteen benchmark sites, looked at live — the bar a spec is built to
   jt-clean    take the working files out of the tree before a handover
 agents/       site-critic: reviews the built site from screenshots, returns fixes
@@ -160,6 +163,11 @@ stays between you and them until they say yes, so the plugin holds to it:
   Nothing in the plugin contacts anybody;
 - sourcing reads public search results for businesses; followers, commenters and
   direct messages are out of scope.
+
+The first screens of the sites you build, with their design axes, are kept in
+`~/.config/jtakeit-sites/studio-sites.json` and beside it — the last ten, on
+your machine only, so a new site can be set beside the last ones. `jt-shots
+--no-studio` leaves a project out; deleting the file forgets them all.
 
 If they say no, or nothing, archive the project and the preview with it. If they
 say yes, ask which photographs they want used, and for the originals.

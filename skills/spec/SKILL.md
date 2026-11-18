@@ -23,6 +23,9 @@ order: `compositions.md` and `shapes.md` whole (short, and they are the
 design), `gallery.md`'s table, then by question — `photos.md` for the shots,
 `pages.md` and `collections.md` for the pages asked for, `booking.md` where it
 books. Everything read stays in the conversation and slows every step after it.
+Two of this plugin's references come before them: [references/floor.md](references/floor.md)
+(short, the same on every site) and [references/axes.md](references/axes.md)
+(the studio's catalogue — read its tables when you choose, below).
 
 ## Redo the design: the scaffold is Brumy's example
 
@@ -111,6 +114,41 @@ material is unusually good here: the palette comes off their own photographs,
 the voice off their own captions, and the hero off whatever they photograph
 most. A page that could be any salon is a wasted afternoon — the portrait
 exists to prevent exactly that.
+
+## The floor and the axes
+
+Two things come before any shape is drawn, and they are different in kind.
+
+**The floor** — [references/floor.md](references/floor.md) — is how every
+site is built and never what it looks like: the screen height through
+`--screen`, fonts that do not jump, numbers that line up, the reading and the
+object measures, one radius family, phones by rule. They are the kit's tokens
+and defaults; build on them and do not choose among them. A visitor feels each
+one whatever the design, and on the studio's own sites it was the floor that
+failed, not the taste.
+
+**The axes** — [references/axes.md](references/axes.md) — are the choices
+every site makes, with every variant the studio has built on each and the site
+it came from: the hero, the ground, the measures, the shape, the header and its
+phone menu, the overlap, the surfaces, the mark, motion, the font pair, the
+hook, the proof, and who answers. First see what the studio built lately, so a
+choice that repeats it is made knowingly:
+
+```bash
+node "$JT/scripts/jt-studio.mjs"     # the last three sites: their axes and hero shots
+```
+
+Then answer each axis's question from the portrait — *is there a strong
+picture of a person, a thing they make, or neither*; *the hour of the business,
+its room*; *the one question a visitor arrives with* — and take the variant
+that answers it, or make a new one where none does (the catalogue says how to
+record it). Write all fourteen to `jtk/design.json` under `axes`, string
+values. **The mark is required**, and it is this business's: their sign, their
+material, the thing that could not be moved to another site.
+
+The last sites are shown, never a rule. A variant the previous spec used is
+still the right one when this business's material asks for it; what the
+catalogue prevents is arriving there because nobody asked.
 
 **Choose the shape before writing any of it**, from the catalogues in
 `docs/shapes.md`: one hero anatomy of seven, one page form of six, one type
@@ -242,8 +280,9 @@ material — `docs/gallery.md` has twelve, six of them things a visitor plays
 with (`deck`, `coverflow`, `focus`, `stage`, `morph`, `sphere`). Run
 `/jt-showroom` and choose with the developer: it shows every one of them on
 this business's own photographs. **Not the arrangement of the last builds**:
-`jt-check` keeps this machine's spec builds and fails a third one in a row with
-the same gallery — choose from this material, not from habit.
+`jt-check` keeps this machine's spec builds and says when a third one in a row
+has the same gallery — a note, not a failure; choose from this material, not
+from habit.
 
 **Size it by the window, not by the column.** A gallery and its controls are
 seen together in a 1440×780 window — a deck widened to fill its column puts its
@@ -673,6 +712,12 @@ the pitch is the whole page, and those are different jobs.
       recorded in `design.benchmarks` — moves, not looks
 - [ ] the shape chosen from the catalogues and recorded in `design.*` — and not
       the shape the last project used
+- [ ] the floor held ([references/floor.md](references/floor.md)): `--screen`,
+      own fonts preloaded with measured fallbacks, tabular figures on money
+      and times, the two measures, one radius family, phones by rule
+- [ ] a variant chosen per axis from the portrait, or a new one made and
+      written under *Decisions* — all fourteen in `jtk/design.json` → `axes`,
+      the mark among them ([references/axes.md](references/axes.md))
 - [ ] one element on the page that could not be moved to another site
 - [ ] every heading read aloud in order: labels or statements, no «not X, but Y»
 - [ ] any pulled quotation stands unattributed — no name, no «on her profile»
