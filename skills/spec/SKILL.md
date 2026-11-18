@@ -280,8 +280,9 @@ material — `docs/gallery.md` has twelve, six of them things a visitor plays
 with (`deck`, `coverflow`, `focus`, `stage`, `morph`, `sphere`). Run
 `/jt-showroom` and choose with the developer: it shows every one of them on
 this business's own photographs. **Not the arrangement of the last builds**:
-`jt-check` keeps this machine's spec builds and fails a third one in a row with
-the same gallery — choose from this material, not from habit.
+`jt-check` keeps this machine's spec builds and says when a third one in a row
+has the same gallery — a note, not a failure; choose from this material, not
+from habit.
 
 **Size it by the window, not by the column.** A gallery and its controls are
 seen together in a 1440×780 window — a deck widened to fill its column puts its
