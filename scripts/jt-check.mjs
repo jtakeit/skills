@@ -45,6 +45,7 @@ import { extname, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadChromium } from './lib/browser.mjs';
+import { attributionIn, judgeBands, readerText } from './lib/check.mjs';
 import { STATE_DIR, STATE_FILE, findRoot, readState, siteHash, writeState } from './lib/state.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -206,12 +207,7 @@ const htmlPath = join(dist, 'index.html');
 const html = existsSync(htmlPath) ? readFileSync(htmlPath, 'utf8') : null;
 
 /** The page as a reader sees it: no markup, no scripts, no entities. */
-const text = (html ?? '')
-  .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, ' ')
-  .replace(/<[^>]+>/g, ' ')
-  .replace(/&[a-z]+;|&#\d+;/gi, ' ')
-  .replace(/\s+/g, ' ')
-  .trim();
+const text = readerText(html ?? '');
 
 if (html) {
   /*
@@ -270,23 +266,15 @@ if (html) {
     if (numbers.length) note('numbers on the page', `${numbers.join(', ')} — check each one is not a claim`);
 
     /*
-     * Where a quoted line says it came from.
-     *
-     * Everything on the page is the business speaking, so attributing one of
-     * their own sentences to them is odd on any site; on a spec build it also
-     * announces that we went through their Instagram, which is the one thing
-     * the pitch must not do. See jtakeit-sites:spec → references/copy.md.
+     * Where a quoted line says it came from — read over the body copy, not
+     * the header, the footer or a link to the profile, since 18 November
+     * 2026. The rule and why it exists: scripts/lib/check.mjs → ATTRIBUTION.
      */
-    const attribution = [
-      /у своєму профіл|в своєму профіл|у профіл|зі свого профіл|из своего профил|в профиле/i,
-      /instagram|інстаграм|инстаграм|@[a-z0-9._]{3,}/i,
-      /з допису|із допису|з посту|в дописі|из поста|aus dem post/i,
-    ];
-    const leaked = attribution.filter((re) => re.test(text));
-    leaked.length
+    const cited = attributionIn(html);
+    cited
       ? fail(
           'quotation',
-          `the page says where a line came from ("${(leaked[0].exec(text) ?? [''])[0]}") — ` +
+          `the page says where a line came from ("${cited}") — ` +
             'a quotation on their own site carries no source, and never the profile we read it in',
         )
       : pass('quotation', 'nothing on the page cites where it was taken from');
@@ -933,8 +921,21 @@ section('header', async () => {
   }
 });
 
-// Every page, at a laptop and a phone: text off the edge, empty boxes, and two
-// sections built the same way one after the other.
+// Every page, at a laptop, two tablets and a phone: text off the edge, empty
+// boxes, and two sections built the same way one after the other.
+//
+// The tablets since 18 November 2026: the breakpoint between the phone and the
+// laptop layouts is where a grid has two columns and too little room for them,
+// and where a block's side padding switches off one step too early — and it
+// was measured by nobody. 768 is a tablet held upright, 1032 the largest one
+// upright, which is a layout of its own on a site whose desktop starts at 1024.
+const EVERY_PAGE = [
+  [1440, 900],
+  [1032, 1366],
+  [768, 1024],
+  [393, 852],
+];
+
 section('every page', async () => {
   const edges = [];
   const empties = [];
@@ -943,7 +944,7 @@ section('every page', async () => {
   const soft = [];
   const foreign = [];
   const underlined = [];
-  const views = PAGES.flatMap((page) => [[page, 1440, 900], [page, 393, 852]]);
+  const views = PAGES.flatMap((page) => EVERY_PAGE.map(([w, h]) => [page, w, h]));
   const measured = await each(views, async ([page, w, h]) => {
       let p;
       try {
@@ -957,10 +958,46 @@ section('every page', async () => {
       await p.waitForTimeout(700);
       const m = await p.evaluate(() => {
         const vw = document.documentElement.clientWidth;
+        /*
+         * Whether a person can see it. Its own style is not enough: opacity is
+         * not inherited, so the twelve-pixel items of a dropdown that is closed
+         * by fading its list out read as visible, and were reported as text
+         * pressed against their frame (wohlfühl-Raum, 18 November 2026). So
+         * every ancestor is asked too — faded out, display:none, [hidden], a
+         * closed <details> (all but its summary), a popover not open, or a box
+         * that clips its content to nothing.
+         */
+        const seen = new Map();
+        const shown = (n) => {
+          if (seen.has(n)) return seen.get(n);
+          const cs = getComputedStyle(n);
+          let ok = cs.display !== 'none' && !n.hasAttribute('hidden');
+          if (ok && n.hasAttribute('popover')) {
+            try {
+              ok = n.matches(':popover-open');
+            } catch {
+              /* a browser without popovers draws it as an ordinary element */
+            }
+          }
+          const up = n.parentElement;
+          if (ok && up?.tagName === 'DETAILS' && !up.open) ok = n.tagName === 'SUMMARY' && up.querySelector(':scope > summary') === n;
+          if (ok && (cs.overflowX !== 'visible' || cs.overflowY !== 'visible')) {
+            const r = n.getBoundingClientRect();
+            ok = r.width >= 1 && r.height >= 1;
+          }
+          seen.set(n, ok);
+          return ok;
+        };
         const visible = (el) => {
           const cs = getComputedStyle(el);
           const r = el.getBoundingClientRect();
-          return cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0.05 && r.width > 0 && r.height > 0;
+          if (cs.visibility !== 'visible' || r.width <= 0 || r.height <= 0) return false;
+          let opacity = 1;
+          for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+            if (!shown(n)) return false;
+            opacity *= Number(getComputedStyle(n).opacity);
+          }
+          return opacity > 0.05;
         };
         const inScroller = (el) => {
           for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
@@ -984,18 +1021,42 @@ section('every page', async () => {
         // Text pressed against the frame it sits in: a bordered or filled box
         // whose text starts at its edge — a price list drawn as a table with
         // no padding in its cells.
+        //
+        // Measured on the sides that are drawn, since 18 November 2026. It
+        // used to measure the left whenever the box had a line anywhere, so a
+        // <dt> under a <dl> with only a border-top, 1.25rem below that line
+        // and on the page's own left edge, failed for a frame that has no
+        // left (wohlfühl-Raum). Now: a fill or a left line is a left side; a
+        // line on top alone is a rule, measured from the line down. A frame
+        // with lines left and right is held to its sides only — a pill's
+        // three pixels above its word are its design. A right line alone is
+        // not measured: an element's box says nothing about where its words
+        // end. The words start inside the element's own padding, so that is
+        // where the gap is measured to: the dt's 1.25rem is its padding-top.
         const framed = [];
         for (const el of document.querySelectorAll('main p, main h2, main h3, main h4, main li, main td, main th, main dt, main dd, main span, main strong')) {
           if (!visible(el) || !(el.textContent || '').trim() || el.children.length > 2) continue;
           let box = el.parentElement;
           for (let d = 0; box && d < 4 && box !== document.body; d++, box = box.parentElement) {
             const cs = getComputedStyle(box);
-            const bordered = ['Left', 'Right', 'Top'].some((side) => parseFloat(cs[`border${side}Width`]) > 0 && cs[`border${side}Style`] !== 'none');
-            const filled = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent' && box.tagName !== 'MAIN' && box.tagName !== 'SECTION';
-            if (!bordered && !filled) continue;
+            const lined = (side) => parseFloat(cs[`border${side}Width`]) > 0 && !['none', 'hidden'].includes(cs[`border${side}Style`]);
+            const [left, right, top] = ['Left', 'Right', 'Top'].map(lined);
+            // A background image on an inline box is how a link draws its
+            // animated underline, not a fill.
+            const painted = (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent') || (cs.backgroundImage !== 'none' && !cs.display.startsWith('inline'));
+            const filled = painted && box.tagName !== 'MAIN' && box.tagName !== 'SECTION';
+            if (!left && !right && !top && !filled) continue;
             const r = el.getBoundingClientRect();
+            const own = getComputedStyle(el);
+            const words = {
+              left: r.left + parseFloat(own.borderLeftWidth) + parseFloat(own.paddingLeft),
+              top: r.top + parseFloat(own.borderTopWidth) + parseFloat(own.paddingTop),
+            };
             const b = box.getBoundingClientRect();
-            if (r.left - b.left < 8 && b.width < vw - 4) framed.push(label(el));
+            const sides = [];
+            if ((filled || left) && b.width < vw - 4 && words.left - (b.left + parseFloat(cs.borderLeftWidth)) < 8) sides.push('left');
+            if (top && !left && !right && !filled && words.top - (b.top + parseFloat(cs.borderTopWidth)) < 6) sides.push('top');
+            if (sides.length) framed.push(`${label(el)} (${sides.join(', ')})`);
             break;
           }
           if (framed.length >= 3) break;
@@ -1115,10 +1176,10 @@ section('every page', async () => {
   }
   edges.length
     ? fail('text at the edge', `${edges.slice(0, 3).join(' · ')} — text needs the page's side margin (16px and up), and a table or list inside a block keeps the block's padding`)
-    : pass('text at the edge', `no text within 12px of the edge on ${PAGES.length} page(s), laptop and phone`);
+    : pass('text at the edge', `no text within 12px of the edge on ${PAGES.length} page(s) at ${EVERY_PAGE.map(([w]) => w).join(', ')}`);
   tight.length
     ? fail('padding', `${tight.slice(0, 3).join(' · ')} — text touching the border or the fill of its own box; give the box padding`)
-    : pass('padding', 'text keeps its distance from the frames it sits in');
+    : pass('padding', `text keeps its distance from the frames it sits in at ${EVERY_PAGE.map(([w]) => w).join(', ')}`);
   empties.length
     ? fail('empty boxes', `${empties.slice(0, 3).join(' · ')} — a frame with nothing in it reads as a picture that failed to load; fill it or take it out`)
     : pass('empty boxes', 'no empty frames');
@@ -2014,56 +2075,130 @@ section('wide screen', async () => {
 
 section('empty space', async () => {
   const page = await open(1920, 1080);
-  const bands = await page.evaluate(() => {
+  const { bands, lines } = await page.evaluate(() => {
     const paints = (el) => {
       const style = getComputedStyle(el);
       if (style.visibility === 'hidden' || Number(style.opacity) < 0.05) return false;
-      if (['IMG', 'CANVAS', 'SVG', 'VIDEO', 'INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(el.tagName)) return true;
+      // tagName is upper case for HTML and lower case for SVG: an inline <svg>
+      // logo was never counted as painting until 18 November 2026.
+      if (['IMG', 'CANVAS', 'SVG', 'VIDEO', 'INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(el.tagName.toUpperCase())) return true;
       return [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
     };
-    return [...document.querySelectorAll('main > section')]
+    const sized = (el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 2 && r.height > 2;
+    };
+
+    // The site's grid, read off its header: where the brand starts, where the
+    // last item ends, and the header's content box. A band whose content
+    // starts on one of these lines is set on the grid, not shoved aside.
+    const header = document.querySelector('header:not(main header), [role="banner"]');
+    const lines = { left: [], right: [] };
+    if (header) {
+      const hb = header.getBoundingClientRect();
+      const hs = getComputedStyle(header);
+      lines.left.push(hb.left + parseFloat(hs.borderLeftWidth) + parseFloat(hs.paddingLeft));
+      lines.right.push(hb.right - parseFloat(hs.borderRightWidth) - parseFloat(hs.paddingRight));
+      const marks = [...header.querySelectorAll('*')].filter((el) => sized(el) && paints(el)).map((el) => el.getBoundingClientRect());
+      const brand = header.querySelector('a[href="/"], a[href="./"], [class*="logo" i], [class*="brand" i]');
+      if (brand && sized(brand)) lines.left.push(brand.getBoundingClientRect().left);
+      if (marks.length) {
+        lines.left.push(Math.min(...marks.map((r) => r.left)));
+        lines.right.push(Math.max(...marks.map((r) => r.right)));
+      }
+      // The screen's own edge is not a grid line: a header with no inset of
+      // its own would otherwise excuse a photograph flush left beside nothing.
+      lines.left = lines.left.filter((x) => x > 16);
+      lines.right = lines.right.filter((x) => x < window.innerWidth - 16);
+    }
+
+    const ALLOW = '[data-jtk-allow~="empty-space"]';
+    const reason = (el) => (el.getAttribute('data-jtk-reason') || '').trim();
+    const named = (el) => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}`;
+
+    const bands = [...document.querySelectorAll('main > section')]
       .map((section, i) => {
+        const name = section.id || String(section.className).split(' ')[0] || `section ${i + 1}`;
+        const allowed = [];
+        const unexplained = [];
+        const marked = [...new Set([section.closest(ALLOW), ...section.querySelectorAll(ALLOW)].filter(Boolean))];
+        for (const el of marked) (reason(el) ? allowed : unexplained).push(reason(el) || `${named(el)} has data-jtk-allow="empty-space" but no data-jtk-reason — not honoured`);
+        const excused = marked.filter((el) => reason(el));
+        // The whole band excused: listed, not measured.
+        if (excused.some((el) => el === section || el.contains(section))) return { name, skipped: true, allowed, unexplained };
+
         const box = section.getBoundingClientRect();
-        const rects = [...section.querySelectorAll('*')]
-          .filter((el) => {
-            const r = el.getBoundingClientRect();
-            return r.width > 2 && r.height > 2 && paints(el);
-          })
-          .map((el) => el.getBoundingClientRect());
-        if (!rects.length || box.width < 2) return null;
+        const inside = [...section.querySelectorAll('*')].filter((el) => !excused.some((x) => x.contains(el)) && sized(el));
+        const rects = inside.filter(paints).map((el) => el.getBoundingClientRect());
+        if (!rects.length || box.width < 2) return allowed.length || unexplained.length ? { name, skipped: true, allowed, unexplained } : null;
         const left = Math.min(...rects.map((r) => r.left)) - box.left;
         const right = box.right - Math.max(...rects.map((r) => r.right));
         const top = Math.min(...rects.map((r) => r.top)) - box.top;
         const bottom = box.bottom - Math.max(...rects.map((r) => r.bottom));
+
+        // A grid column with nothing in it — the fault this check was written
+        // for — stays a fault when the grid itself stands on the header's
+        // line. Whatever paints counts as filling a column, and so does a box
+        // with a photograph or a colour of its own.
+        const fills = [
+          ...rects,
+          ...inside
+            .filter((el) => {
+              const cs = getComputedStyle(el);
+              return cs.backgroundImage !== 'none' || (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent');
+            })
+            .map((el) => el.getBoundingClientRect()),
+        ];
+        let emptyColumn = 0;
+        for (const grid of [section, ...section.querySelectorAll('*')]) {
+          const cs = getComputedStyle(grid);
+          if (!cs.display.includes('grid')) continue;
+          const tracks = cs.gridTemplateColumns.split(/\s+/).filter((t) => /^[\d.]+px$/.test(t)).map(parseFloat);
+          if (tracks.length < 2) continue;
+          const g = grid.getBoundingClientRect();
+          const gap = parseFloat(cs.columnGap) || 0;
+          let x = g.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft);
+          for (const w of tracks) {
+            const [x0, x1] = [x, x + w];
+            x = x1 + gap;
+            if (w < box.width * 0.15) continue;
+            const used = fills.some((r) => Math.min(r.right, x1) - Math.max(r.left, x0) > 8 && r.bottom > g.top && r.top < g.bottom);
+            if (!used) emptyColumn = Math.max(emptyColumn, Math.round(w));
+          }
+        }
+
         return {
-          name: section.id || String(section.className).split(' ')[0] || `section ${i + 1}`,
+          name,
           width: Math.round(box.width),
           height: Math.round(box.height),
           left: Math.round(left),
           right: Math.round(right),
+          contentLeft: box.left + left,
+          contentRight: box.right - right,
           // Against the section for lopsidedness, against the screen for width:
           // a centred shell that is itself narrow leaves air outside its own box.
           lopsided: Math.abs(left - right) / box.width,
           onScreen: (box.width - left - right) / window.innerWidth,
           tall: (box.height - top - bottom) / box.height,
           form: Boolean(section.querySelector('form')),
+          emptyColumn,
+          allowed,
+          unexplained,
         };
       })
       .filter(Boolean);
+    return { bands, lines };
   });
   await page.close();
 
   if (!bands.length) {
     note('empty space', 'no <section> inside <main> to measure');
   } else {
-    const problems = [];
-
-    // A void on one side of a band.
-    for (const b of bands.filter((b) => b.lopsided > 0.15)) {
-      problems.push(
-        `${b.name}: ${b.left}px of air on one side and ${b.right}px on the other — a band with one empty half`,
-      );
-    }
+    // A void on one side of a band — unless it is the site's own grid line,
+    // or the page declares it. scripts/lib/check.mjs → judgeBands.
+    const judged = judgeBands(bands, lines);
+    const problems = [...judged.problems];
+    const measured = bands.filter((b) => !b.skipped);
 
     /*
      * The form is the case worth being strict about. A column of prose may be
@@ -2073,7 +2208,7 @@ section('empty space', async () => {
      * beside — the contact details, a photograph, the questions — or let it use
      * the width.
      */
-    for (const b of bands.filter((b) => b.form && b.onScreen < 0.45)) {
+    for (const b of measured.filter((b) => b.form && b.onScreen < 0.45)) {
       problems.push(
         `${b.name}: the form uses ${Math.round(b.onScreen * 100)}% of a 1920px screen — ` +
           'put something beside it or let it widen',
@@ -2081,16 +2216,22 @@ section('empty space', async () => {
     }
 
     // A band that is mostly its own padding.
-    for (const b of bands.filter((b) => b.tall < 0.35 && b.height > 400)) {
+    for (const b of measured.filter((b) => b.tall < 0.35 && b.height > 400)) {
       problems.push(`${b.name}: content fills ${Math.round(b.tall * 100)}% of a ${b.height}px band — the rest is air`);
     }
 
+    if (judged.unexplained.length && problems.length) problems.push(...judged.unexplained);
     problems.length
       ? fail('empty space', problems.slice(0, 4).join('; '))
-      : pass('empty space', `${bands.length} band(s), none lopsided or mostly empty at 1920px`);
+      : pass('empty space', `${measured.length} band(s), none lopsided or mostly empty at 1920px`);
+
+    // Declared, and set on the grid: printed so a person reads the decision.
+    if (judged.allowed.length) note('empty space', judged.allowed.map((a) => `allowed: ${a}`).join('; '));
+    if (judged.aligned.length) note('empty space', `${judged.aligned.join(', ')} — set on the site's grid, not counted as lopsided`);
+    if (judged.unexplained.length && !problems.length) note('empty space', judged.unexplained.join('; '));
 
     // Narrow but centred and full: reported so a person can look, not failed.
-    const thin = bands.filter((b) => !b.form && b.onScreen < 0.4 && b.lopsided <= 0.15 && b.tall >= 0.35);
+    const thin = measured.filter((b) => !b.form && b.onScreen < 0.4 && b.lopsided <= 0.15 && b.tall >= 0.35);
     if (thin.length)
       note(
         'empty space',

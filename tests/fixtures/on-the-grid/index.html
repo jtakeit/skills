@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture · on the grid</title>
+<!--
+  A correct page jt-check once failed (wohlfühl-Raum, 18 November 2026):
+  a hero on the logo's line, a price list ruled on top only, a dropdown and
+  a <details> that are closed, and the studio's Instagram in the menu and the
+  footer. tests/jt-check.test.mjs expects empty space, padding, text at the
+  edge and quotation to pass here.
+-->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #222; background: #fff; }
+  .wrap { width: min(1216px, 100% - 48px); margin: 0 auto; }
+  header .wrap { display: flex; justify-content: space-between; align-items: center; height: 72px; }
+  header nav a { margin-left: 24px; color: inherit; text-decoration: none; }
+  section { padding: 64px 0; }
+  .hero h1 { font-size: 48px; line-height: 1.1; margin: 0 0 16px; max-width: 560px; }
+  .hero p { margin: 0; max-width: 560px; }
+  .prices dl { margin: 0; border-top: 1px solid #222; }
+  .prices dt { padding-top: 1.25rem; font-weight: 600; }
+  .prices dd { margin: 0 0 1rem; }
+  .more { position: relative; }
+  .more ul { position: absolute; top: 100%; left: 0; margin: 0; padding: 0; list-style: none; font-size: 12px; background: #f1ece4; opacity: 0; }
+  .more:focus-within ul { opacity: 1; }
+  .faq .answer { border: 1px solid #222; }
+  .aside p { margin: 0; max-width: 300px; }
+  @media (min-width: 1600px) { .aside p { margin-left: 1100px; } }
+  footer { padding: 32px 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/" class="logo">wohlfühl-Raum</a>
+    <nav><a href="#preise">Preise</a><a href="https://www.instagram.com/wohlfuehl.raum">Instagram</a></nav>
+  </div>
+</header>
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <h1>Massage in Winterthur, in Ruhe</h1>
+      <p>Eine Stunde, die Ihnen gehört. Termine unter der Woche und am Samstag.</p>
+    </div>
+  </section>
+  <section id="preise" class="prices">
+    <div class="wrap">
+      <h2>Preise</h2>
+      <dl>
+        <dt>Klassische Massage</dt>
+        <dd>Sechzig Minuten, ganzer Körper.</dd>
+        <dt>Rücken und Nacken</dt>
+        <dd>Dreissig Minuten, gezielt.</dd>
+      </dl>
+    </div>
+  </section>
+  <section class="menu">
+    <div class="wrap">
+      <div class="more">
+        <button type="button">Mehr Angebote</button>
+        <ul><li>Fussreflex</li><li>Hot Stone</li><li>Gutscheine</li></ul>
+      </div>
+      <details class="faq">
+        <summary>Was bringe ich mit?</summary>
+        <div class="answer"><p>Nichts — Tücher und Öl sind hier.</p></div>
+      </details>
+    </div>
+  </section>
+  <section class="aside" data-jtk-allow="empty-space" data-jtk-reason="the closing line stands right, opposite the hero">
+    <div class="wrap">
+      <p>Wer sich hier hinlegt, steht leichter wieder auf.</p>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <p>Folgen Sie uns auf <a href="https://www.instagram.com/wohlfuehl.raum">Instagram</a> · @wohlfuehl.raum</p>
+  </div>
+</footer>
+</body>
+</html>
