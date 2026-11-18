@@ -285,9 +285,15 @@ fingerprint of `src/`, `jtk/` and `public/`, in the state. Change a file after
 it passed and it has to pass again. The check covers every page the build
 wrote, not only the home page: the first screen in real browser windows
 (1440×780, 1280×680, 393×720), the header the same on every page, every menu
-item to a place of its own, text off the edges and off the frames it sits in,
-no empty boxes, no two neighbouring sections built alike. A person can
-override with `--unchecked "<why>"`; the reason is logged. An agent does not.
+item to a place of its own, text off the edges and off the frames it sits in
+(at 1440, 1032, 768 and 393 wide), no empty boxes, no two neighbouring
+sections built alike. A band set on the header's line — the logo's left edge,
+the header's content box — is aligned, not empty. One whose emptiness is the
+design otherwise says so where it is drawn: `data-jtk-allow="empty-space"`
+with `data-jtk-reason="…"`, printed as «allowed: …» on every run, so a
+reviewer reads it; without a reason it counts for nothing. A person can
+override the whole check with `--unchecked "<why>"`; the reason is logged. An
+agent does not.
 
 A full run takes seconds, not minutes; between fixes `--again` repeats only the
 sections that failed and records nothing for the gate. Fix every failure of a
