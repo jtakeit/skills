@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixture · real faults</title>
+<!--
+  What jt-check must keep failing after 18 November 2026: a grid on the
+  header's line whose second column is empty, a band shoved off the grid,
+  a table cell and a ruled row with their text against the line, a quote at
+  the screen's edge on a tablet only, and a pulled line credited to Instagram.
+-->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; color: #222; background: #fff; }
+  .wrap { width: min(1216px, 100% - 48px); margin: 0 auto; }
+  header .wrap { display: flex; justify-content: space-between; align-items: center; height: 72px; }
+  header nav a { margin-left: 24px; color: inherit; text-decoration: none; }
+  section { padding: 64px 0; }
+  .split .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .shoved { padding: 64px 24px; }
+  .shoved p { margin: 0 0 0 100px; max-width: 480px; }
+  table { border-collapse: collapse; }
+  td { border: 1px solid #222; padding: 0; }
+  .rows dl { margin: 0; border-top: 1px solid #222; }
+  .rows dt { padding-top: 0; font-weight: 600; }
+  @media (min-width: 700px) and (max-width: 1100px) {
+    .quote .wrap { width: 100%; }
+    .quote blockquote { margin: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a href="/" class="logo">Studio</a>
+    <nav><a href="#preise">Preise</a></nav>
+  </div>
+</header>
+<main>
+  <section class="split">
+    <div class="wrap">
+      <div><h2>Über uns</h2><p>Seit Jahren an derselben Adresse, mit denselben Händen.</p></div>
+      <div></div>
+    </div>
+  </section>
+  <section class="shoved">
+    <p>Ein Satz, der neben nichts steht und weit vom Raster beginnt.</p>
+  </section>
+  <section id="preise" class="prices">
+    <div class="wrap">
+      <table><tr><td><span>Schnitt</span></td><td><span>Fünfzig</span></td></tr></table>
+      <div class="rows"><dl><dt>Farbe</dt><dd>Nach Absprache.</dd></dl></div>
+    </div>
+  </section>
+  <section class="quote">
+    <div class="wrap">
+      <blockquote>Jeder Kopf weiss schon, welche Form er haben will. <cite>— Lea, auf <a href="https://www.instagram.com/lea">Instagram</a></cite></blockquote>
+    </div>
+  </section>
+</main>
+</body>
+</html>
