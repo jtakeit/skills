@@ -3,7 +3,7 @@
  * jt-shots — every page of the build, section by section, at a laptop and a
  * phone, as pictures for somebody to look at.
  *
- *   jt-shots [--dist ./dist | --url http://localhost:4321/] [--out .jtakeit/shots]
+ *   jt-shots [--dist ./dist | --url http://localhost:4321/] [--out .jtakeit/shots] [--no-studio]
  *
  * Written for the site critic (agents/site-critic.md): a reviewer that did not
  * build the page reads these and nothing else, so it sees what a visitor sees
@@ -12,12 +12,18 @@
  * fault — and the dev server's own furniture is hidden.
  *
  * Prints a manifest: page, width, section, file. Exit code 0.
+ *
+ * In a pipeline project it also leaves this site's first screens and design
+ * axes in the studio index on this machine (scripts/lib/studio.mjs), and prints
+ * the last three sites beside it — what the critic compares the hero with.
+ * `--no-studio` leaves the index alone.
  */
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { loadChromium } from './lib/browser.mjs';
 import { findRoot } from './lib/state.mjs';
+import { describeRecent, indexPath, projectRecord, recentSites, recordSite } from './lib/studio.mjs';
 
 const argv = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -157,3 +163,18 @@ server?.close();
 writeFileSync(join(out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 for (const m of manifest) console.log(`${m.page.padEnd(24)} ${String(m.width).padEnd(5)} ${m.section.padEnd(42)} ${m.file.replace(root, '.')}`);
 console.log(`\n${manifest.length} picture(s) in ${out.replace(root, '.')} — manifest.json beside them.`);
+
+/*
+ * The studio index. Only the default output (the pictures are found where
+ * projectRecord looks for them) and only a pipeline project; anything going
+ * wrong here leaves the shots as they are — they are the job, this is extra.
+ */
+if (!argv.includes('--no-studio') && out === resolve(join(root, '.jtakeit', 'shots'))) {
+  const record = projectRecord(root);
+  if (record) {
+    const entry = recordSite({ ...record, url: flag('url') ?? null });
+    const recent = recentSites(root, record.axes);
+    console.log(`\nThe studio's last sites (${entry ? indexPath() : 'index not writable'}) — set this hero beside theirs:`);
+    for (const line of describeRecent(recent, record.axes)) console.log(`  ${line}`);
+  }
+}

@@ -148,6 +148,27 @@ Stages do not overlap and they do not run backwards. A client who asks for a
 fourth variant during revisions has not sent the project back to variants —
 that is a scope change, and it is priced, not silently absorbed. Say so.
 
+## The floor and the catalogue
+
+Every stage that designs — `spec`, `variants`, and `revisions` where a review
+reshapes a section — stands on the same two references, both in
+`jtakeit-sites:spec`:
+
+- **the floor** ([floor.md](../spec/references/floor.md)) — how every site is
+  built, whatever it looks like: `--screen`, fonts that do not jump, tabular
+  figures, the reading and the object measures, one radius family, phones by
+  rule. The kit's tokens and defaults; never chosen, never compared.
+- **the axes** ([axes.md](../spec/references/axes.md)) — thirteen choices
+  every site makes, with every variant the studio has built and the site it
+  came from. A stage picks a variant per axis from the client's material, or
+  makes a new one, and writes the choice to `jtk/design.json` under `axes`.
+
+`jt-shots` leaves each project's first screens and axes in a small index on
+this machine (`~/.config/jtakeit-sites/studio-sites.json`, the last ten), and
+`jt-studio` prints the last three. The design stages look before choosing, and
+the site critic sets the new hero beside them. It shows a resemblance; nothing
+in the pipeline refuses one — a person makes the sites they like.
+
 ## Service packages
 
 The package decides which stages do extra work, not which stages exist. Read

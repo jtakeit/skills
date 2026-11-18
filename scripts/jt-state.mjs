@@ -37,6 +37,7 @@ import {
   skillsVersion,
   writeState,
 } from './lib/state.mjs';
+import { AXES, readAxes } from './lib/studio.mjs';
 
 const argv = process.argv.slice(2);
 const command = argv[0];
@@ -158,6 +159,18 @@ switch (command) {
       ].filter(Boolean);
       console.log(`Surface:  ${surface.length ? surface.join(' · ') : '— not chosen (node_modules/@jtakeit/astro/docs/surface.md)'}`);
       console.log(`Angles:   ${state.design?.angles ?? '— not chosen (spec → references/copy.md)'}`);
+      // The axes live in jtk/design.json, not here: the platform reads that
+      // file, and a second copy in the state would drift from it.
+      const axes = readAxes(root);
+      console.log(
+        `Axes:     ${
+          !axes
+            ? '— no jtk/design.json'
+            : axes.missing.length === AXES.length
+              ? '— not chosen (spec → references/axes.md)'
+              : `${AXES.length - axes.missing.length} of ${AXES.length} in jtk/design.json${axes.missing.length ? ` — not yet: ${axes.missing.join(', ')}` : ''}`
+        }`,
+      );
       console.log(`Skills:   ${now.version}${now.commit ? ` @ ${now.commit}` : ''}`);
       if (was && now.commit && was.replace('+', '') !== now.commit.replace('+', '')) {
         console.log(`  ! this project was last written by ${was}. Different skills, possibly different results.`);
